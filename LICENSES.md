@@ -13,6 +13,8 @@ These ship in the deployed application.
 | [react](https://react.dev) | 19.2.8 | MIT | UI runtime |
 | [react-dom](https://react.dev) | 19.2.8 | MIT | DOM renderer |
 | [zustand](https://github.com/pmndrs/zustand) | 5.0.15 | MIT | State store and its `persist` middleware (localStorage) |
+| [@supabase/supabase-js](https://github.com/supabase/supabase-js) | 2.112.4 | MIT | Calls the two ledger functions from the server route |
+| [@supabase/ssr](https://github.com/supabase/ssr) | 0.12.5 | MIT | Cookie-aware Supabase clients and the session-refresh middleware |
 | [framer-motion](https://motion.dev) | 13.1.1 | MIT | Animated amounts, the moving pocket dates, the sheet transitions |
 
 ## Development dependencies
@@ -43,7 +45,7 @@ Used to build, check and type the project. None of these reach the browser.
 | Service | Terms | Used for |
 |---|---|---|
 | [Google Gemini API](https://ai.google.dev/gemini-api/terms) | Google APIs Terms of Service | Reading the amount, date and shop from a photographed receipt (`POST /api/receipt`), and the in-app assistant (`POST /api/chat`). Both are called server-side only; the key is never sent to the browser. |
-| [Supabase](https://supabase.com/terms) | Supabase Terms of Service | Optional Postgres backup of a ledger, via `POST/GET /api/ledger`. Reached over PostgREST with the service role from the server only; no Supabase client library is bundled. |
+| [Supabase](https://supabase.com/terms) | Supabase Terms of Service | Optional Postgres backup of a ledger, via `POST/GET /api/ledger`. Reached with the publishable key, which is public by design; the tables are unreachable under row level security and only two security-definer functions are exposed. |
 | [Vercel](https://vercel.com/legal/terms) | Vercel Terms of Service | Hosting the deployed application |
 
 ## Starters, templates and UI kits

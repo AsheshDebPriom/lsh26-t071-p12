@@ -1,23 +1,29 @@
 /**
  * Ledger backup and restore.
  *
- * Third and last server route, and like the other two it exists so a key never
- * reaches the browser. The Supabase tables have row level security on with no
- * policies, so only the service role can touch them — and that key lives here.
+ * Unlike the other two routes this one holds no secret — the Supabase key here
+ * is the *publishable* key, which is public by design. What protects a ledger is
+ * the schema: row level security is on with no policies, so the key can select
+ * nothing, and the only reachable surface is two SECURITY DEFINER functions that
+ * each require the ledger's own unguessable uuid.
+ *
+ * The route still earns its place: it validates and bounds everything before it
+ * reaches Postgres, so a malformed or oversized document never gets that far.
  *
  * This is deliberately **not** the app's source of truth. localStorage is, and
  * stays so: the live URL has to open and work with no setup at all. If Supabase
- * is unconfigured or unreachable, every route below answers honestly and the
- * app carries on exactly as it does without a database.
+ * is unconfigured or unreachable, every route below answers honestly and the app
+ * carries on exactly as it does without a database.
  */
 
+import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 20;
 
-const PROJECT_URL = process.env.SUPABASE_URL;
-const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const PROJECT_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 /** Guards against a runaway client pushing an unbounded document. */
 const MAX_EXPENSES = 5000;
@@ -42,21 +48,20 @@ function notConfigured() {
   );
 }
 
-/** Calls a Postgres function through PostgREST with the service role. */
-async function rpc(fn: string, args: Record<string, unknown>) {
-  const res = await fetch(`${PROJECT_URL}/rest/v1/rpc/${fn}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: SERVICE_KEY!,
-      Authorization: `Bearer ${SERVICE_KEY}`,
-    },
-    body: JSON.stringify(args),
-    signal: AbortSignal.timeout(15_000),
+/**
+ * One client per request. No session is persisted and no token is refreshed:
+ * this route is stateless and there are no accounts to keep signed in.
+ */
+function db() {
+  return createClient(PROJECT_URL!, PUBLISHABLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
   });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`${res.status} ${text.slice(0, 200)}`);
-  return text ? JSON.parse(text) : null;
+}
+
+async function rpc(fn: "save_ledger" | "load_ledger", args: Record<string, unknown>) {
+  const { data, error } = await db().rpc(fn, args);
+  if (error) throw new Error(`${error.code ?? ""} ${error.message}`.trim());
+  return data;
 }
 
 /* ------------------------------------------------------------------ */
@@ -64,7 +69,7 @@ async function rpc(fn: string, args: Record<string, unknown>) {
 /* ------------------------------------------------------------------ */
 
 export async function POST(request: Request): Promise<NextResponse<LedgerApiResponse>> {
-  if (!PROJECT_URL || !SERVICE_KEY) return notConfigured();
+  if (!PROJECT_URL || !PUBLISHABLE_KEY) return notConfigured();
 
   let body: { ledgerId?: unknown; snapshot?: unknown };
   try {
@@ -151,7 +156,7 @@ export async function POST(request: Request): Promise<NextResponse<LedgerApiResp
 /* ------------------------------------------------------------------ */
 
 export async function GET(request: Request): Promise<NextResponse<LedgerApiResponse>> {
-  if (!PROJECT_URL || !SERVICE_KEY) return notConfigured();
+  if (!PROJECT_URL || !PUBLISHABLE_KEY) return notConfigured();
 
   const id = new URL(request.url).searchParams.get("id")?.trim() ?? "";
   if (!UUID.test(id)) {

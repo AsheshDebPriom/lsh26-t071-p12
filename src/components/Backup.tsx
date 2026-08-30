@@ -300,8 +300,9 @@ export function BackupSection() {
 
       {unavailable ? (
         <p className="mt-2 text-[11.5px] leading-snug text-ink-3">
-          Backup needs <code>SUPABASE_URL</code> and <code>SUPABASE_SERVICE_ROLE_KEY</code> set
-          on the deployment. Without them the app is unaffected — it simply keeps everything
+          Backup needs <code>NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
+          <code>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code> set on the deployment, and the
+          migration applied. Without them the app is unaffected — it simply keeps everything
           in this browser.
         </p>
       ) : null}

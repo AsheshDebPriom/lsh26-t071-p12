@@ -72,9 +72,14 @@ create index if not exists pockets_by_priority
 -- ---------------------------------------------------------------------------
 --
 -- Enabled with NO policies, deliberately. There is no user auth in this build,
--- so an anon key reaching these tables directly would be able to read every
--- ledger. Instead nothing but the service role can touch them, that key lives
--- only in the Next.js server route, and the browser never sees it.
+-- so a publishable key reaching these tables directly would be able to read
+-- every ledger that exists. Nothing can select from them.
+--
+-- The only way in is the two SECURITY DEFINER functions below, and both take a
+-- ledger id. That id is a v4 uuid: unguessable, and the single thing needed to
+-- reach one ledger and no other. Capability security rather than account
+-- security — which is the honest trade for a build with no accounts, and it is
+-- said plainly on screen next to the key.
 
 alter table public.ledgers  enable row level security;
 alter table public.expenses enable row level security;
@@ -93,6 +98,9 @@ revoke all on public.ledgers, public.expenses, public.pockets from anon, authent
 create or replace function public.save_ledger(payload jsonb)
 returns uuid
 language plpgsql
+security definer
+-- Pinned so the definer's privileges cannot be redirected at another schema.
+set search_path = public, pg_temp
 as $$
 declare
   v_id uuid := nullif(payload->>'ledgerId', '')::uuid;
@@ -174,6 +182,8 @@ create or replace function public.load_ledger(p_id uuid)
 returns jsonb
 language sql
 stable
+security definer
+set search_path = public, pg_temp
 as $$
   select jsonb_build_object(
     'ledgerId',             l.id,
@@ -204,5 +214,9 @@ as $$
   where l.id = p_id;
 $$;
 
-revoke all on function public.save_ledger(jsonb) from anon, authenticated;
-revoke all on function public.load_ledger(uuid) from anon, authenticated;
+-- The functions are the entire public surface. Executing one still requires the
+-- ledger's uuid, so holding the publishable key alone reaches nothing.
+revoke all on function public.save_ledger(jsonb) from public;
+revoke all on function public.load_ledger(uuid) from public;
+grant execute on function public.save_ledger(jsonb) to anon, authenticated;
+grant execute on function public.load_ledger(uuid)  to anon, authenticated;

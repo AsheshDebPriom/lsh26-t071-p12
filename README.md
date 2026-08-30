@@ -44,18 +44,21 @@ Three environment variables unlock the optional extras. All are read **only** on
 the server and none reaches the browser:
 
 ```
-GEMINI_API_KEY=<your Google AI Studio key>      # receipt reading + the assistant
-SUPABASE_URL=https://<project-ref>.supabase.co  # backup (optional)
-SUPABASE_SERVICE_ROLE_KEY=<service role key>    # backup (optional)
+GEMINI_API_KEY=<your Google AI Studio key>                # receipt reading + the assistant
+NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co        # backup (optional)
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...   # backup (optional)
 ```
 
+Only `GEMINI_API_KEY` is a secret. The two Supabase values are the publishable
+pair and are public by design — see the backup section below for what actually
+protects a ledger.
+
 Put them in `.env.local` for local development, or in the deployment's environment
-variables. Every one of them is optional:
+variables, then apply `supabase/migrations/0001_ledger.sql` to the Supabase
+project. Every one of them is optional:
 
 - Without `GEMINI_API_KEY`, the receipt route and the assistant answer with a clear message and the "type it in" path is unaffected.
 - Without the Supabase pair, backup reports itself unavailable and the ledger simply stays in the browser, exactly as before.
-
-The database schema is in `supabase/migrations/0001_ledger.sql`.
 
 Other commands:
 
@@ -291,7 +294,8 @@ another device. Turn it off and the browser simply stops sending.
 
 How it is kept safe without accounts:
 
-- Row level security is **on with no policies** on all three tables, so an anon key can read nothing. Only the service role can, and that key lives in `src/app/api/ledger/route.ts` on the server.
+- Row level security is **on with no policies** on all three tables. The publishable key can select nothing at all — the tables are simply unreachable.
+- The only surface is two `security definer` functions, `save_ledger` and `load_ledger`, and both take a ledger id. Reaching one ledger requires its own v4 uuid, so holding the publishable key alone reaches nothing. Their `search_path` is pinned, so the definer's privileges cannot be redirected at another schema.
 - A save is a single Postgres function (`save_ledger`) so it is one transaction — a save can never half-succeed and leave expenses attached to a salary that was not written.
 - Money is `bigint` paisa in the database, matching the application. A float column would reintroduce exactly the drift the app avoids everywhere else.
 - Everything read back is re-validated in `src/lib/sync.ts` before it reaches the store: a row without a positive integer amount or an ISO date is dropped rather than allowed to put a `NaN` through the forecast.
