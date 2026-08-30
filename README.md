@@ -26,7 +26,8 @@ There is also an **assistant** on every screen. It answers questions about your
 own month and it can do things for you — record an expense, create a pocket,
 change a contribution, run a what-if, load a sample case, open a screen.
 
-Add an expense by photographing the receipt, or by typing four fields.
+Three ways to record an expense: photograph the receipt, **paste your bKash or
+Nagad messages**, or type four fields.
 
 ---
 
@@ -281,6 +282,53 @@ All four required items work, so all three bonuses were built:
 
 ---
 
+## Goal seek — name the date, and the app works backwards
+
+The what-if slider asks *"if I cut Food by 30%, when do I get the laptop?"*.
+Goal seek asks the question people actually have:
+
+> **"I want the Laptop by October 2027."**
+> *Fund Laptop first, and cut Education by 55% — frees ৳4,299 a month, lands 31 October 2027.*
+> *Fund Laptop first, and cut Rent by 28% — frees ৳4,480 a month, lands 31 October 2027.*
+
+Nothing is modelled or estimated. For each candidate it binary-searches the cut
+percentage and runs the **real** forecast and the **real** pocket simulation at
+every step, so every date shown is one the app would produce if you dragged the
+slider there yourself, and every cut is the smallest whole percent that works.
+It is only possible because the engine is pure — there is no state to reset
+across a hundred runs.
+
+Measuring it changed the design twice. It costs 40–150ms, so it runs on a click
+and never on render. And on the seeded ledger nearly every deadline first came
+back "impossible", because the Laptop sits behind a ৳20,000-a-month Wedding
+pocket that takes the surplus first — which pointed at the lever already in the
+app: **the funding order is free.** The solver now tries "fund this one first"
+before it asks anyone to eat less. Five years out, the honest answer is
+*"fund it first, costs nothing"*.
+
+`src/lib/goalSeek.ts`, `src/components/GoalSeek.tsx`.
+
+## Mobile money — paste a month at once
+
+The brief says receipts arrive as screenshots. In Dhaka most spending never
+touches paper: it is a bKash, Nagad, Rocket or Upay confirmation. Those have a
+consistent shape, so they are read **locally and deterministically** — no model,
+no key, no network, no waiting. A pattern either matches or it does not.
+
+It keeps the receipt screen's discipline:
+
+- a message whose amount cannot be read is shown in the reserved amber and is **never** imported with a guessed figure
+- money coming **in** is recognised and excluded, with the count stated, because filing a salary credit as spending is worse than skipping it
+- a message already imported is matched by transaction id and skipped
+- the category comes from **your own history** for that shop, not a model's guess
+- where no merchant is named, the transaction type is used — "Cash out", "Mobile recharge" — which is reading the message, not inventing a counterparty
+
+Writing the test first caught three real bugs: the amount reader taking the
+*balance* instead of the payment, shop names swallowing the rest of the
+sentence, and a failed payment being dropped in silence.
+
+`src/lib/mobileMoney.ts`, `src/components/SmsImport.tsx`.
+
 ## Backup (optional)
 
 The ledger lives in `localStorage` and that is the source of truth. It has to be:
@@ -453,6 +501,8 @@ src/lib/          the engine, all pure, no React
   types.ts
 src/store/        zustand + persist
 src/components/   the four tabs, the receipt flow, the sheets, the primitives
+  goalSeek.ts     the slider run backwards — binary search over the real engine
+  mobileMoney.ts  bKash / Nagad / Rocket / Upay messages, parsed locally
 src/lib/assistant.ts  the digest the assistant may quote, and the typed action parser
 src/app/
   api/receipt/    reads a photographed receipt
