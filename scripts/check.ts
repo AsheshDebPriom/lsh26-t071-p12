@@ -135,7 +135,7 @@ for (const c of cases) {
       );
     }
     console.log("\n  Insights");
-    for (const i of buildInsights(fc, sim, pockets)) {
+    for (const i of buildInsights(fc, sim, pockets, expenses)) {
       console.log(`    · ${i.text}`);
     }
     console.log("\n  Pockets");

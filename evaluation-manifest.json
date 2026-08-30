@@ -1,0 +1,83 @@
+{
+  "team_id": "LSH26-T071",
+  "problem_id": "P12",
+  "repository_name": "lsh26-t071-p12",
+  "live_url": "https://lsh26-t071-p12.vercel.app",
+  "demo_video_url_optional": "",
+  "event_start_code": "<START-CODE>",
+  "repository_created_before_release": true,
+  "pre_event_materials": [
+    "Empty GitHub repository with zero commits. No code, no scaffold, no README existed before 6:00 PM.",
+    "Organiser participant pack: P12_personal_ledger_public.json (committed unmodified to public/sample-data/), the EVENT.md and evaluation-manifest.json templates, the problem brief, the submission guide and the scoring document. Reference material only; no code was taken from any of it.",
+    "The Next.js scaffold was generated DURING the event with npx create-next-app@latest and is part of the first code commit."
+  ],
+  "sample_data": {
+    "loads_published_fixture": true,
+    "method": "Bundled in the app. All 25 published cases ship at public/sample-data/P12_personal_ledger_public.json, committed unmodified. In the app: Setup -> 'Show the 25 cases' -> pick one. Loading a case replaces the salary, expenses, pockets, DPS rate and the date being viewed with that case's own values. The same fixture is also driven headlessly by 'npm run check', which runs the real engine over all 25 cases and prints every figure.",
+    "reset_instructions": "Setup -> 'Restore the sample ledger' returns the app to case PUB-01 exactly as it appears on a first visit. Setup -> 'Clear everything' empties the ledger entirely. State lives only in this browser's localStorage under the key 'ledger-v1'; clearing site data also resets it."
+  },
+  "problem_solving_method": "The engine was built before any interface. All four required items rest on two pure functions — a forecast over the expense list and a month-by-month pocket simulation — so those were written first, then run against all 25 published cases with scripts/check.ts and checked by hand before a single screen existed. That order is why the four published constraints are exercised by a test rather than asserted in a comment, and why the what-if slider was cheap to add at the end: it is the same forecast function called with one more argument. Money is held as integer paisa throughout, because the published DPS rule rounds half up to the paisa every month and floating point would drift over a 190-month simulation.",
+  "requirements": {
+    "R1": {
+      "status": "complete",
+      "evidence": "Salary in Setup. Add -> 'Photograph a receipt' or 'Type it in'. src/app/api/receipt/route.ts calls the model with the image and a FIXED response schema, so three fields each carrying their own confidence are decoded against that shape rather than parsed from a hopeful JSON string; the schema's field descriptions instruct it to return null rather than guess. src/components/ReceiptFlow.tsx shows what was read beside the photograph and lets every field be corrected before saving. src/components/ExpenseForm.tsx is the typed path, and src/components/LogTab.tsx edits and deletes. Verified on a clear receipt (read the 2546.50 grand total, not the 2665.00 subtotal; parsed day-first 11/04/2026 to 2026-04-11) and on a creased one (amount null at confidence 0)."
+    },
+    "R2": {
+      "status": "complete",
+      "evidence": "Month tab, src/components/DashboardTab.tsx. Total spent against salary as a hero figure with a three-part meter; a ranked category breakdown where each bar carries a mark at that category's whole total for last month; the five largest expenses; and month-over-month given two ways — the same slice of both months, which is the only fair like-for-like mid-month, and the whole month once the forecast plays out — followed by a per-category delta list."
+    },
+    "R3": {
+      "status": "complete",
+      "evidence": "Forecast tab, src/lib/forecast.ts and src/lib/insights.ts. Expected spending for the rest of the month broken down by category, the expected position at month end, and ten insight templates each firing with computed values or returning null, ranked by materiality; all ten fire on the opening ledger and every one names a category or shop and an amount. The 'How the forecast is built' card states the method on screen and lists every monthly charge detected. Constraint checked in scripts/check.ts: editing one expense by 9,000 taka rewrites 8 of the 10 insights."
+    },
+    "R4": {
+      "status": "complete",
+      "evidence": "Pockets tab, src/lib/pockets.ts. Name, item, target and monthly contribution per pocket. The completion date comes from a forward month-by-month simulation against the forecast's own surplus — there is no target/contribution division anywhere in that file — and each card prints the naive figure beside the simulated one so the difference is visible: the seeded Wedding pocket reads 95 months against the 15 division would claim. 'Not reachable at current spending' replaces a date when the surplus never gets there. The DPS panel prints the rate and the compounding basis next to the figure and compares the deposits the simulation actually funds."
+    }
+  },
+  "bonus_features": {
+    "what_if_control": "Complete. Forecast and Pockets tabs, src/components/WhatIfControl.tsx. Cutting one category by a percentage moves every pocket completion date on the same frame — no debounce, no memoisation. A 60% cut on the opening ledger moves Wedding from 2034 to 2028, Laptop from 2038 to 2029 and Bike from 2042 to 2030.",
+    "live_contribution_editing": "Complete. A contribution slider on each pocket card moves its own date as the thumb moves.",
+    "automatic_recurring_detection": "Complete. A shop billing in two consecutive months within 15% on the amount is marked 'recurring' in the log and in the monthly-charges list. src/lib/forecast.ts, findMonthlyCharges()."
+  },
+  "team_members": [
+    {
+      "registered_name": "<MEMBER NAME>",
+      "github_username": "<GITHUB USERNAME>",
+      "major_contribution": "<TO BE COMPLETED BY THE TEAM LEADER BEFORE SUBMITTING>",
+      "evidence_paths_or_commits": []
+    }
+  ],
+  "major_design_decisions": [
+    "All money is an integer number of paisa, never a float. The published DPS rule rounds interest half up to the paisa every month, so a float would drift across a long simulation; the half-up rounding is done on integers rather than by nudging a float.",
+    "'Today' is a setting rather than new Date(). Every published case carries its own `today`, so reading the system clock would compute an April case against whatever month the judge's machine is in. The date being viewed is always shown in the header.",
+    "Pocket completion dates come from a forward simulation, not division. Each month the forecast's surplus is allocated to pockets in an explicit, reorderable priority order; a short month caps the contribution and the date slips, and a finished pocket frees its money for the ones behind it.",
+    "The forecast separates monthly charges from day-to-day spending. Rent is the largest line in the fixture and is always paid in the first days of the month, so a plain daily-rate extrapolation on the 17th would forecast it at nearly double and every pocket date downstream would be wrong. The day-to-day blend weights this month by how much of it has actually elapsed.",
+    "Insights are templates with computed numbers injected — no stored advice and no model-written text anywhere in the path — so they change when the numbers change by construction rather than by promise.",
+    "Charts are CSS, not a chart library. Every chart here is a ranked horizontal bar, which is a div with a width. Recharts was named in our own plan, installed, went unused, and was removed rather than shipped as a dead dependency.",
+    "One hue for every bar; identity comes from the row label, so no categorical palette is cycled. Colour does one job: money out in crimson, money in in steel blue, and an amber reserved strictly for uncertain receipt fields. The three were checked with a palette validator (11.4 dE apart under protanopia, all above 3:1 on the surface) and every delta also carries an arrow and a sign so colour never works alone.",
+    "shadcn/ui was named in our plan but not installed; the six primitives needed were written directly rather than pulling in Radix and class-variance-authority for six components.",
+    "The receipt reader uses Gemini rather than Anthropic, because the key available for this build was a Gemini key. The architecture is unchanged: one server route holding the key, an image plus a fixed output schema so structure is guaranteed rather than probable, and per-field confidence."
+  ],
+  "known_limitations": [
+    "Persistence is localStorage only. There is no database and no account, so the ledger does not travel between browsers or devices, and clearing site data clears it.",
+    "The two months the app opens with are published case PUB-01, not a real person's spending.",
+    "Only the current and previous month feed the forecast. A third month would improve the daily-rate blend and let seasonality show.",
+    "With only one month of data the forecast projects from that month alone, which is weaker. The seeded ledger avoids this on a first visit.",
+    "The DPS figure is an arithmetic illustration of the published rule. A real DPS also has a fixed term, a penalty for a missed instalment and tax on the interest, none of which is modelled. The app says so beside the figure.",
+    "Recurring detection matches on the exact shop name, so 'GP recharge' and 'Grameenphone' would not be recognised as the same biller.",
+    "Pocket completion dates land on a month end, because contributions are monthly. A within-month date would be false precision.",
+    "The what-if control cuts one category at a time, deliberately, so what is on screen is never the sum of several invisible adjustments.",
+    "The receipt reader depends on an external API with modest rate limits and can be slow on a poor connection. The typed path is always available and is never hidden behind a failure.",
+    "Light theme only. No authentication, no multi-currency, no bank or mobile-money integration, no export — all out of scope by design."
+  ],
+  "ai_tools_used": [
+    {
+      "tool": "Claude Code (Claude Opus 5)",
+      "used_for": "Paired on the whole build: the forecast and pocket-simulation engine, the interface, the receipt route, the test harness and the documentation.",
+      "how_output_was_verified": "Nothing numeric was taken on trust. scripts/check.ts runs the real engine over all 25 published cases and asserts invariants that would catch a plausible-looking wrong answer: that rent is never extrapolated past one month, that category projections sum to the month total, that a projected whole month lands within 0.75x-1.30x of last month's actual (measured 0.90x-1.22x), that the simulation never beats target/contribution, and that a what-if cut can never delay a date. The DPS arithmetic is checked against hand-worked values from the published rule (1,000 taka at 8.00% earns 6.67 in month one and 13.38 in month two, and a figure landing exactly on half a paisa rounds up rather than to even). The receipt reader was tested against a clear receipt and a deliberately unreadable one to confirm it declines to guess. Every screen was rendered and looked at in a real browser at phone and desktop widths, which is how the two what-if slider bugs were found and fixed. The colour choices were checked with a palette validator rather than by eye."
+    }
+  ],
+  "licenses_file": "LICENSES.md",
+  "declaration": "The information above is complete and truthful to the best of the team's knowledge."
+}
