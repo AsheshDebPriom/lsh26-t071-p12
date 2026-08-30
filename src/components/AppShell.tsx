@@ -20,12 +20,14 @@ import { AddExpenseSheet } from "./AddExpenseSheet";
 import { DashboardTab } from "./DashboardTab";
 import { ForecastTab } from "./ForecastTab";
 import { LogTab } from "./LogTab";
+import { PocketsTab } from "./PocketsTab";
 import { SettingsSheet } from "./SettingsSheet";
 import { Button, Pill, Skeleton, Taka, cn } from "./ui";
 
 const TABS = [
   { id: "month", label: "Month" },
   { id: "forecast", label: "Forecast" },
+  { id: "pockets", label: "Pockets" },
   { id: "log", label: "Log" },
 ] as const;
 
@@ -106,6 +108,7 @@ export function AppShell() {
       <main className="flex-1 space-y-3 px-3 py-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
         {tab === "month" ? <DashboardTab fc={fc} expenses={expenses} /> : null}
         {tab === "forecast" ? <ForecastTab fc={fc} sim={sim} expenses={expenses} pockets={pockets} /> : null}
+        {tab === "pockets" ? <PocketsTab fc={fc} sim={sim} /> : null}
         {tab === "log" ? <LogTab fc={fc} onAdd={() => setAdding(true)} /> : null}
       </main>
 

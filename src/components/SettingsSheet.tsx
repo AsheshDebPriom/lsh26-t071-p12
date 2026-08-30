@@ -10,7 +10,7 @@
  * against the wrong month.
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { formatDate, realToday } from "@/lib/dates";
 import { fromPaisa, toPaisa } from "@/lib/money";
@@ -30,10 +30,14 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
   const resetToSeed = useLedger((s) => s.resetToSeed);
   const startEmpty = useLedger((s) => s.startEmpty);
 
-  const [salaryText, setSalaryText] = useState(String(fromPaisa(salary)));
-  useEffect(() => {
+  // The salary box keeps its own text so a half-typed number is not reformatted
+  // under the cursor. It is re-seeded from the store each time the sheet opens.
+  const [salaryText, setSalaryText] = useState("");
+  const [wasOpen, setWasOpen] = useState(false);
+  if (open !== wasOpen) {
+    setWasOpen(open);
     if (open) setSalaryText(salary === 0 ? "" : String(fromPaisa(salary)));
-  }, [open, salary]);
+  }
 
   return (
     <Sheet

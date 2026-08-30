@@ -14,7 +14,7 @@
 
 import { addMonths, lastDayOf, type ISODate, type MonthKey } from "./dates";
 import type { Forecast } from "./forecast";
-import { roundHalfUp, type Paisa } from "./money";
+import type { Paisa } from "./money";
 import type { Pocket } from "./types";
 
 /** 50 years. Past this a pocket is reported as not reachable, not as a date. */
