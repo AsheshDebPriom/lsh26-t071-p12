@@ -13,16 +13,19 @@ import { useState } from "react";
 
 import { formatDate, monthLabel } from "@/lib/dates";
 import { forecast } from "@/lib/forecast";
+import { simulatePockets } from "@/lib/pockets";
 import { useLedger } from "@/store/useLedger";
 
 import { AddExpenseSheet } from "./AddExpenseSheet";
 import { DashboardTab } from "./DashboardTab";
+import { ForecastTab } from "./ForecastTab";
 import { LogTab } from "./LogTab";
 import { SettingsSheet } from "./SettingsSheet";
 import { Button, Pill, Skeleton, Taka, cn } from "./ui";
 
 const TABS = [
   { id: "month", label: "Month" },
+  { id: "forecast", label: "Forecast" },
   { id: "log", label: "Log" },
 ] as const;
 
@@ -32,6 +35,7 @@ export function AppShell() {
   const hydrated = useLedger((s) => s.hydrated);
   const salary = useLedger((s) => s.salary);
   const expenses = useLedger((s) => s.expenses);
+  const pockets = useLedger((s) => s.pockets);
   const settings = useLedger((s) => s.settings);
   const adjustments = useLedger((s) => s.adjustments);
 
@@ -42,6 +46,7 @@ export function AppShell() {
   if (!hydrated) return <BootSkeleton />;
 
   const fc = forecast(expenses, salary, adjustments, settings.today);
+  const sim = simulatePockets(pockets, fc, settings.dpsAnnualRatePercent);
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col">
@@ -100,6 +105,7 @@ export function AppShell() {
 
       <main className="flex-1 space-y-3 px-3 py-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
         {tab === "month" ? <DashboardTab fc={fc} expenses={expenses} /> : null}
+        {tab === "forecast" ? <ForecastTab fc={fc} sim={sim} expenses={expenses} pockets={pockets} /> : null}
         {tab === "log" ? <LogTab fc={fc} onAdd={() => setAdding(true)} /> : null}
       </main>
 
