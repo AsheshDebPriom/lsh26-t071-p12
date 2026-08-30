@@ -4,7 +4,7 @@
   "repository_name": "lsh26-t071-p12",
   "live_url": "https://lsh26-t071-p12.vercel.app",
   "demo_video_url_optional": "",
-  "event_start_code": "<START-CODE>",
+  "event_start_code": "LSH26-8490-C900",
   "repository_created_before_release": true,
   "pre_event_materials": [
     "Empty GitHub repository with zero commits. No code, no scaffold, no README existed before 6:00 PM.",
@@ -42,10 +42,45 @@
   },
   "team_members": [
     {
-      "registered_name": "<MEMBER NAME>",
-      "github_username": "<GITHUB USERNAME>",
-      "major_contribution": "<TO BE COMPLETED BY THE TEAM LEADER BEFORE SUBMITTING>",
-      "evidence_paths_or_commits": []
+      "registered_name": "Md Sazzad Siddique",
+      "github_username": "mdsazzadsiddique",
+      "major_contribution": "Owned the engine: the forecast in src/lib/forecast.ts (separating monthly charges such as rent from day-to-day spending, and weighting the daily-rate blend by how much of the month has elapsed), the forward month-by-month pocket simulation and the integer-paisa DPS arithmetic in src/lib/pockets.ts, the ten insight templates in src/lib/insights.ts, and the 25-case verification harness in scripts/check.ts that asserts the four published constraints.",
+      "evidence_paths_or_commits": [
+        "src/lib/forecast.ts",
+        "src/lib/pockets.ts",
+        "src/lib/insights.ts",
+        "src/lib/money.ts",
+        "src/lib/dates.ts",
+        "scripts/check.ts"
+      ]
+    },
+    {
+      "registered_name": "Ashesh Deb Priom",
+      "github_username": "AsheshDebPriom",
+      "major_contribution": "Owned the interface, and authored the repository's commits. The four tabs (Month, Forecast, Pockets, Log), the design system and its colour work — one ink, a money-out crimson, a money-in steel blue and the reserved uncertainty amber, checked with a palette validator — the shared primitives and the bottom-sheet, the ranked CSS bar charts, and the what-if control that moves every pocket date live.",
+      "evidence_paths_or_commits": [
+        "src/components/DashboardTab.tsx",
+        "src/components/ForecastTab.tsx",
+        "src/components/PocketsTab.tsx",
+        "src/components/LogTab.tsx",
+        "src/components/WhatIfControl.tsx",
+        "src/components/ui.tsx",
+        "src/components/Sheet.tsx",
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "registered_name": "Rezuan Islam",
+      "github_username": "RezuanIslam",
+      "major_contribution": "Owned receipt reading and delivery: the single server route in src/app/api/receipt/route.ts that holds the API key and calls the model with a fixed response schema so per-field confidences are guaranteed rather than parsed, the confidence review screen in src/components/ReceiptFlow.tsx that leaves any field below 0.8 empty in the reserved amber and blocks Save until each is confirmed, plus the Vercel deployment and environment configuration and the README, LICENSES.md and this manifest.",
+      "evidence_paths_or_commits": [
+        "src/app/api/receipt/route.ts",
+        "src/components/ReceiptFlow.tsx",
+        "src/components/AddExpenseSheet.tsx",
+        "README.md",
+        "LICENSES.md",
+        "evaluation-manifest.json"
+      ]
     }
   ],
   "major_design_decisions": [

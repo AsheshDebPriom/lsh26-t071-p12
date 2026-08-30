@@ -3,7 +3,7 @@
 - **Team ID:** `LSH26-T071`
 - **Problem ID:** `P12`
 - **Repository:** `lsh26-t071-p12`
-- **Event start code:** `<START-CODE>`
+- **Event start code:** `LSH26-8490-C900`
 - **Repository created before release:** Yes (empty repository only — no commits before the event)
 
 ## Material present before 6:00 PM
@@ -18,6 +18,25 @@
 Everything else in this repository was written during the event window. The Next.js
 scaffold was generated **during** the event with `npx create-next-app@latest` (see the
 first code commit) — it was not present beforehand.
+
+## Registered members
+
+| Registered name | GitHub username | Owned |
+|---|---|---|
+| Md Sazzad Siddique | `mdsazzadsiddique` | The engine: forecast, pocket simulation, DPS arithmetic, insight templates, test harness |
+| Ashesh Deb Priom | `AsheshDebPriom` | The interface: the four tabs, design system, primitives, the what-if control. Authored the commits |
+| Rezuan Islam | `RezuanIslam` | Receipt reading: the API route and the confidence review screen. Deployment and documentation |
+
+## AI assistant use
+
+Declared as required. Claude Code (Claude Opus 5) was used throughout this
+build — the forecast and pocket-simulation engine, the interface, the receipt
+route, the test harness and the documentation. Nothing numeric was accepted on
+trust: `scripts/check.ts` runs the real engine over all 25 published cases and
+fails on any broken invariant, the DPS arithmetic is checked against values
+worked by hand from the published rule, and every screen was rendered and
+inspected in a browser at phone and desktop widths. The work, and the
+responsibility for it, remain the team's.
 
 ## Declaration
 
