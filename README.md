@@ -517,9 +517,11 @@ the exact code the browser runs against all 25 published cases in Node.
 
 ## Build record
 
-[`docs/build-record.html`](./docs/build-record.html) — every required item, bonus and
-extra feature on one page, each paired with the figure that verifies it, plus the six
-bugs the verification caught. Open it in any browser; it needs nothing installed.
+**Live: <https://lsh26-t071-p12.vercel.app/build-record.html>** — every required item,
+bonus and extra feature on one page, each paired with the figure that verifies it, plus
+the six bugs the verification caught. Also in the repository at
+[`public/build-record.html`](./public/build-record.html); it opens in any browser with
+nothing installed.
 
 ## Team and approach
 

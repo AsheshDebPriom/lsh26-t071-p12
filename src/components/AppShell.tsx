@@ -236,7 +236,15 @@ export function AppShell() {
           LSH26-T071 · P12 Personal Ledger Manager · viewing{" "}
           {formatDate(settings.today, "long")} · DPS quoted at{" "}
           <span className="tnum">{settings.dpsAnnualRatePercent.toFixed(2)}%</span> a year,
-          compounded monthly.
+          compounded monthly.{" "}
+          <a
+            href="/build-record.html"
+            target="_blank"
+            rel="noreferrer"
+            className="text-in underline underline-offset-2"
+          >
+            Build record
+          </a>
         </footer>
       </div>
 

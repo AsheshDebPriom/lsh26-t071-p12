@@ -171,6 +171,19 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
           </span>{" "}
           a year.
         </div>
+
+        <p className="text-[12px] leading-snug text-ink-3">
+          <a
+            href="/build-record.html"
+            target="_blank"
+            rel="noreferrer"
+            className="text-ink-2 underline underline-offset-2 hover:text-ink"
+          >
+            Build record
+          </a>{" "}
+          — every requirement, bonus and extra feature, each with the figure that verifies
+          it.
+        </p>
       </div>
     </Sheet>
   );
