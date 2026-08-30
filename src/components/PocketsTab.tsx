@@ -23,6 +23,7 @@ import { pocketSentence } from "@/lib/insights";
 import { useLedger } from "@/store/useLedger";
 import type { Pocket } from "@/lib/types";
 
+import { GoalSeek } from "./GoalSeek";
 import { Sheet } from "./Sheet";
 import { WhatIfControl } from "./WhatIfControl";
 import {
@@ -58,7 +59,10 @@ export function PocketsTab({
       <SurplusRow fc={fc} sim={sim} count={pockets.length} />
 
       {ordered.length > 0 ? (
-        <WhatIfControl fc={fc} sim={sim} pockets={pockets} baseline={baseline} />
+        <>
+          <WhatIfControl fc={fc} sim={sim} pockets={pockets} baseline={baseline} />
+          <GoalSeek />
+        </>
       ) : null}
 
       {ordered.length === 0 ? (
