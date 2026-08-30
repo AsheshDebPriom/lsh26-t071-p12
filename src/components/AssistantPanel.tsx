@@ -202,6 +202,17 @@ export function AssistantPanel({
   }
 
   /**
+   * Clears the conversation only. Anything already applied is in the ledger and
+   * stays there — this is a fresh chat, not an undo, and the empty state says so
+   * by simply offering the suggestions again.
+   */
+  function resetChat() {
+    setMessages([]);
+    setInput("");
+    inputRef.current?.focus();
+  }
+
+  /**
    * Applying happens *before* the state update, never inside it. A setState
    * updater has to be pure — React is free to call it more than once — and
    * writing the ledger from inside one records the expense twice.
@@ -263,14 +274,28 @@ export function AssistantPanel({
               "sm:bottom-[calc(8rem+env(safe-area-inset-bottom))] lg:bottom-24 lg:right-6 lg:w-[26rem]",
             )}
           >
-            <header className="border-b border-rule px-4 py-3">
-              <p className="text-[13.5px] font-semibold tracking-tight text-ink">
-                Ask about your money
-              </p>
-              <p className="mt-1 text-[11.5px] leading-snug text-ink-3">
-                Answers come from your own figures. Anything that changes the ledger is
-                shown to you first.
-              </p>
+            <header className="flex items-start justify-between gap-3 border-b border-rule px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-[13.5px] font-semibold tracking-tight text-ink">
+                  Ask about your money
+                </p>
+                <p className="mt-1 text-[11.5px] leading-snug text-ink-3">
+                  Answers come from your own figures. Anything that changes the ledger is
+                  shown to you first.
+                </p>
+              </div>
+              {messages.length > 0 ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="shrink-0"
+                  disabled={busy}
+                  onClick={resetChat}
+                  title="Clear this conversation. Anything already applied stays in your ledger."
+                >
+                  New chat
+                </Button>
+              ) : null}
             </header>
 
             <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
