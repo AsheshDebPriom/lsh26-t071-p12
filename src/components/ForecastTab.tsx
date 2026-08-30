@@ -15,6 +15,7 @@ import { buildInsights, type Insight } from "@/lib/insights";
 import type { PocketSimulation } from "@/lib/pockets";
 import type { Expense, Pocket } from "@/lib/types";
 
+import { WhatIfControl } from "./WhatIfControl";
 import { AnimatedTaka, Card, CardHead, EmptyState, Pill, Taka, cn } from "./ui";
 
 export function ForecastTab({
@@ -22,11 +23,13 @@ export function ForecastTab({
   sim,
   expenses,
   pockets,
+  baseline,
 }: {
   fc: Forecast;
   sim: PocketSimulation;
   expenses: Expense[];
   pockets: Pocket[];
+  baseline: PocketSimulation;
 }) {
   if (fc.isEmpty) {
     return (
@@ -45,6 +48,7 @@ export function ForecastTab({
     <>
       <MonthEndPosition fc={fc} />
       <Insights insights={insights} />
+      <WhatIfControl fc={fc} sim={sim} pockets={pockets} baseline={baseline} />
       <RestOfMonthByCategory fc={fc} />
       <HowItWorks fc={fc} />
     </>

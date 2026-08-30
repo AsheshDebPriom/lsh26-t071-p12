@@ -190,6 +190,95 @@ for (const c of cases) {
   expect("rounds half up, not half to even", half.interest === 11, `got ${half.interest}`);
 }
 
+
+
+/* ------------------------------------------------------------------ */
+/* The four published constraints, exercised rather than asserted.     */
+/* ------------------------------------------------------------------ */
+
+{
+  const c = fixture.cases[0];
+  const { expenses, pockets, salary, rate } = toState(c);
+
+  // C2 — the insights must change when the numbers change.
+  const before = buildInsights(
+    forecast(expenses, salary, [], c.today),
+    simulatePockets(pockets, forecast(expenses, salary, [], c.today), rate),
+    pockets,
+    expenses,
+  );
+  const editedExpenses = expenses.map((e) =>
+    e.id === "E028" ? { ...e, amount: e.amount + toPaisa("9000.00") } : e,
+  );
+  const fcAfter = forecast(editedExpenses, salary, [], c.today);
+  const after = buildInsights(fcAfter, simulatePockets(pockets, fcAfter, rate), pockets, editedExpenses);
+
+  const changed = before.filter((b) => {
+    const match = after.find((a) => a.id === b.id);
+    return !match || match.text !== b.text;
+  });
+  expect(
+    "C2: editing one expense rewrites the insights",
+    changed.length >= 3,
+    `only ${changed.length} of ${before.length} changed`,
+  );
+  console.log(
+    `\nC2  editing one expense by ৳9,000 rewrote ${changed.length} of ${before.length} insights.`,
+  );
+
+  // C3 — pocket dates come from the forecast, so a what-if cut must move them.
+  const fcPlain = forecast(expenses, salary, [], c.today);
+  const simPlain = simulatePockets(pockets, fcPlain, rate);
+  const fcCut = forecast(
+    expenses,
+    salary,
+    [
+      { category: "Groceries", cutPercent: 50 },
+      { category: "Entertainment", cutPercent: 50 },
+      { category: "Education", cutPercent: 50 },
+    ],
+    c.today,
+  );
+  const simCut = simulatePockets(pockets, fcCut, rate);
+
+  let moved = 0;
+  for (const p of pockets) {
+    const a = simPlain.projections.get(p.id)!;
+    const b = simCut.projections.get(p.id)!;
+    if (a.completionMonth !== b.completionMonth) moved += 1;
+    // A cut can only ever help, never push a date out.
+    if (a.reachable && b.reachable) {
+      expect(
+        `C3: cutting spending never delays ${p.name}`,
+        b.monthsToComplete! <= a.monthsToComplete!,
+        `${a.monthsToComplete} -> ${b.monthsToComplete}`,
+      );
+    }
+  }
+  expect("C3: a what-if cut moves pocket completion dates", moved > 0);
+  console.log(
+    `C3  cutting three categories by 50% moved ${moved} of ${pockets.length} pocket dates` +
+      ` (surplus ${formatTaka(simPlain.steadyMonthSurplus)} -> ${formatTaka(simCut.steadyMonthSurplus)}).`,
+  );
+
+  // Degenerate inputs must not throw or produce nonsense.
+  const emptyFc = forecast([], 0, [], c.today);
+  expect("empty ledger forecasts zero", emptyFc.projectedMonthTotal === 0 && emptyFc.isEmpty);
+  const noSalaryFc = forecast(expenses, 0, [], c.today);
+  expect("no salary still forecasts spending", noSalaryFc.projectedMonthTotal > 0);
+  expect("no salary reports the whole month as short", noSalaryFc.endOfMonthPosition < 0);
+  const noSalarySim = simulatePockets(pockets, noSalaryFc, rate);
+  expect(
+    "no salary makes every pocket unreachable",
+    pockets.every((p) => !noSalarySim.projections.get(p.id)!.reachable),
+  );
+  expect("no pockets simulates cleanly", simulatePockets([], emptyFc, rate).projections.size === 0);
+  const firstOfMonth = forecast(expenses, salary, [], `${c.months.this}-01`);
+  expect("day one of the month still forecasts", firstOfMonth.projectedMonthTotal > 0);
+  const lastOfMonth = forecast(expenses, salary, [], `${c.months.this}-30`);
+  expect("the last day of the month leaves nothing to forecast", lastOfMonth.daysRemaining === 0);
+}
+
 const rs = ratios.map((r) => r.ratio).sort((a, b) => a - b);
 console.log(
   `\nProjected whole month vs last month's actual:` +

@@ -24,6 +24,7 @@ import { useLedger } from "@/store/useLedger";
 import type { Pocket } from "@/lib/types";
 
 import { Sheet } from "./Sheet";
+import { WhatIfControl } from "./WhatIfControl";
 import {
   AnimatedTaka,
   Button,
@@ -37,7 +38,15 @@ import {
   cn,
 } from "./ui";
 
-export function PocketsTab({ fc, sim }: { fc: Forecast; sim: PocketSimulation }) {
+export function PocketsTab({
+  fc,
+  sim,
+  baseline,
+}: {
+  fc: Forecast;
+  sim: PocketSimulation;
+  baseline: PocketSimulation;
+}) {
   const pockets = useLedger((s) => s.pockets);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Pocket | null>(null);
@@ -47,6 +56,10 @@ export function PocketsTab({ fc, sim }: { fc: Forecast; sim: PocketSimulation })
   return (
     <>
       <SurplusCard fc={fc} sim={sim} count={pockets.length} />
+
+      {pockets.length > 0 ? (
+        <WhatIfControl fc={fc} sim={sim} pockets={pockets} baseline={baseline} />
+      ) : null}
 
       {ordered.length === 0 ? (
         <Card>
@@ -179,6 +192,7 @@ function PocketCard({
   onEdit: () => void;
 }) {
   const movePocket = useLedger((s) => s.movePocket);
+  const updatePocket = useLedger((s) => s.updatePocket);
   const [showSchedule, setShowSchedule] = useState(false);
 
   // Shown only as the contrast to the simulated date. Never used as the answer.
@@ -254,11 +268,30 @@ function PocketCard({
           <span className="text-[12px] text-ink-3">Target</span>
           <Taka value={pocket.target} className="text-[14px] font-semibold text-ink" />
         </div>
-        <div className="mt-2 flex items-baseline justify-between gap-3">
-          <span className="text-[12px] text-ink-3">Set aside each month</span>
-          <span className="text-[13px] text-ink">
-            <Taka value={pocket.monthlyContribution} className="font-medium" />
-          </span>
+        {/* Dragging this re-runs the whole simulation on every change event, so
+            the date above moves as the thumb moves. */}
+        <div className="mt-2">
+          <div className="flex items-baseline justify-between gap-3">
+            <label htmlFor={`contrib-${pocket.id}`} className="text-[12px] text-ink-3">
+              Set aside each month
+            </label>
+            <span className="text-[13px] text-ink">
+              <AnimatedTaka value={pocket.monthlyContribution} className="font-medium" />
+            </span>
+          </div>
+          <input
+            id={`contrib-${pocket.id}`}
+            type="range"
+            min={500}
+            max={contributionSliderMax(pocket)}
+            step={500}
+            value={Math.round(pocket.monthlyContribution / 100)}
+            aria-valuetext={`${Math.round(pocket.monthlyContribution / 100)} taka a month`}
+            className="mt-1"
+            onChange={(e) =>
+              updatePocket(pocket.id, { monthlyContribution: Number(e.target.value) * 100 })
+            }
+          />
         </div>
         <div className="mt-2 flex items-baseline justify-between gap-3">
           <span className="text-[12px] text-ink-3">
@@ -615,6 +648,16 @@ function PocketSheet({
       </form>
     </Sheet>
   );
+}
+
+/**
+ * Twice the current contribution gives the thumb somewhere useful to travel in
+ * both directions, without a range so wide that a small drag does nothing.
+ */
+function contributionSliderMax(pocket: Pocket) {
+  const contributionTaka = Math.round(pocket.monthlyContribution / 100);
+  const targetTaka = Math.round(pocket.target / 100);
+  return Math.max(2000, Math.min(targetTaka, Math.max(contributionTaka * 2, 5000)));
 }
 
 function Field({

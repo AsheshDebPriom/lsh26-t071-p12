@@ -50,6 +50,17 @@ export function AppShell() {
   const fc = forecast(expenses, salary, adjustments, settings.today);
   const sim = simulatePockets(pockets, fc, settings.dpsAnnualRatePercent);
 
+  // The same simulation with no what-if cuts, so the control can show what its
+  // own slider moved. Running the engine twice is still far under a frame.
+  const hasCuts = adjustments.some((a) => a.cutPercent > 0);
+  const baseline = hasCuts
+    ? simulatePockets(
+        pockets,
+        forecast(expenses, salary, [], settings.today),
+        settings.dpsAnnualRatePercent,
+      )
+    : sim;
+
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col">
       <header className="sticky top-0 z-30 border-b border-rule bg-ground/95 backdrop-blur">
@@ -107,8 +118,8 @@ export function AppShell() {
 
       <main className="flex-1 space-y-3 px-3 py-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
         {tab === "month" ? <DashboardTab fc={fc} expenses={expenses} /> : null}
-        {tab === "forecast" ? <ForecastTab fc={fc} sim={sim} expenses={expenses} pockets={pockets} /> : null}
-        {tab === "pockets" ? <PocketsTab fc={fc} sim={sim} /> : null}
+        {tab === "forecast" ? <ForecastTab fc={fc} sim={sim} expenses={expenses} pockets={pockets} baseline={baseline} /> : null}
+        {tab === "pockets" ? <PocketsTab fc={fc} sim={sim} baseline={baseline} /> : null}
         {tab === "log" ? <LogTab fc={fc} onAdd={() => setAdding(true)} /> : null}
       </main>
 
