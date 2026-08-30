@@ -515,6 +515,12 @@ the exact code the browser runs against all 25 published cases in Node.
 
 ---
 
+## Build record
+
+[`docs/build-record.html`](./docs/build-record.html) — every required item, bonus and
+extra feature on one page, each paired with the figure that verifies it, plus the six
+bugs the verification caught. Open it in any browser; it needs nothing installed.
+
 ## Team and approach
 
 See `evaluation-manifest.json` for per-member contributions and the AI-assistance

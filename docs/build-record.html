@@ -1,0 +1,938 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ledger Build Record</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+
+<style>
+  /* ---------------------------------------------------------------
+     Tokens. The product's own palette — this page is the same object
+     as the app it documents, so it uses the app's colours, its
+     tabular numerals, and its rule that amber means one thing only.
+     --------------------------------------------------------------- */
+  :root {
+    --ground:  #f7f6f4;
+    --surface: #ffffff;
+    --sunk:    #f0efec;
+    --ink:     #1a1817;
+    --ink-2:   #55504b;
+    --ink-3:   #8a837c;
+    --rule:    #e4e1dc;
+    --rule-2:  #cfcac3;
+    --out:     #a02040;
+    --out-bg:  #fbeaee;
+    --in:      #15607a;
+    --in-bg:   #e8f1f5;
+    --amber:   #b5730a;
+    --amber-bg:#fdf4e5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:  #16150f14;
+      --ground:  #151413;
+      --surface: #1d1c1a;
+      --sunk:    #232120;
+      --ink:     #f3f0ec;
+      --ink-2:   #bcb5ad;
+      --ink-3:   #8b837b;
+      --rule:    #322f2c;
+      --rule-2:  #46423e;
+      --out:     #e5798f;
+      --out-bg:  #2e1a1f;
+      --in:      #74b9d8;
+      --in-bg:   #14262e;
+      --amber:   #e2a44d;
+      --amber-bg:#2b2115;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:  #151413;
+    --surface: #1d1c1a;
+    --sunk:    #232120;
+    --ink:     #f3f0ec;
+    --ink-2:   #bcb5ad;
+    --ink-3:   #8b837b;
+    --rule:    #322f2c;
+    --rule-2:  #46423e;
+    --out:     #e5798f;
+    --out-bg:  #2e1a1f;
+    --in:      #74b9d8;
+    --in-bg:   #14262e;
+    --amber:   #e2a44d;
+    --amber-bg:#2b2115;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px 96px; }
+
+  /* ---------------- masthead ---------------- */
+  .mast { padding: 56px 0 28px; border-bottom: 2px solid var(--ink); }
+  .eyebrow {
+    font-family: "Geist Mono", ui-monospace, monospace;
+    font-size: 11px; letter-spacing: .13em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  h1 {
+    font-size: clamp(30px, 5vw, 46px); line-height: 1.04; margin: 14px 0 0;
+    letter-spacing: -.028em; font-weight: 600; text-wrap: balance;
+  }
+  .standfirst {
+    margin: 16px 0 0; max-width: 62ch; font-size: 16.5px;
+    line-height: 1.62; color: var(--ink-2);
+  }
+
+  .facts {
+    display: grid; gap: 1px; margin-top: 30px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    background: var(--rule); border: 1px solid var(--rule);
+  }
+  .fact { background: var(--surface); padding: 13px 15px; }
+  .fact dt {
+    font-family: "Geist Mono", monospace; font-size: 10.5px;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3);
+  }
+  .fact dd {
+    margin: 7px 0 0; font-size: 21px; font-weight: 600; letter-spacing: -.02em;
+  }
+  .fact dd span { font-size: 12.5px; font-weight: 400; color: var(--ink-3); }
+  .fact a { color: var(--in); text-decoration: none; font-size: 14px; word-break: break-all; }
+  .fact a:hover { text-decoration: underline; }
+
+  /* ---------------- sections ---------------- */
+  section { margin-top: 56px; }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; border-bottom: 1px solid var(--ink); padding-bottom: 9px; }
+  .sec-head h2 { font-size: 21px; margin: 0; font-weight: 600; letter-spacing: -.02em; }
+  .sec-head .count {
+    margin-left: auto; font-family: "Geist Mono", monospace; font-size: 12px; color: var(--ink-3);
+  }
+  .sec-note { margin: 14px 0 0; max-width: 68ch; color: var(--ink-2); font-size: 14.5px; }
+
+  /* ---------------- the ledger row ---------------- */
+  .rows { border-bottom: 1px solid var(--rule); }
+  .row {
+    display: grid; gap: 8px 32px; padding: 20px 0;
+    border-top: 1px solid var(--rule);
+    grid-template-columns: minmax(0, 1fr);
+  }
+  @media (min-width: 800px) { .row { grid-template-columns: minmax(0, 1fr) minmax(268px, 330px); } }
+
+  .row h3 { margin: 0; font-size: 16.5px; font-weight: 600; letter-spacing: -.012em; }
+  .row h3 .tag {
+    font-family: "Geist Mono", monospace; font-size: 11px; font-weight: 500;
+    color: var(--ink-3); letter-spacing: .06em; margin-right: 9px;
+  }
+  .row p { margin: 8px 0 0; color: var(--ink-2); max-width: 62ch; font-size: 14.5px; }
+  .row p + p { margin-top: 9px; }
+  .where {
+    margin-top: 10px; font-family: "Geist Mono", monospace;
+    font-size: 11.5px; color: var(--ink-3); word-break: break-word;
+  }
+
+  /* evidence column — the amount column of a ledger */
+  .ev { background: var(--sunk); border: 1px solid var(--rule); border-radius: 3px; padding: 12px 14px; align-self: start; }
+  .ev-label {
+    font-family: "Geist Mono", monospace; font-size: 10px; letter-spacing: .11em;
+    text-transform: uppercase; color: var(--ink-3);
+  }
+  .ev ul { list-style: none; margin: 9px 0 0; padding: 0; display: grid; gap: 8px; }
+  .ev li { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; font-size: 13px; }
+  .ev li span:first-child { color: var(--ink-2); }
+  .ev li span:last-child {
+    font-family: "Geist Mono", monospace; font-weight: 500; text-align: right;
+    white-space: nowrap; color: var(--ink);
+  }
+  .ev li .good { color: var(--in); }
+  .ev li .bad  { color: var(--out); }
+  .ev li .warn { color: var(--amber); }
+  .ev .single { font-family: "Geist Mono", monospace; font-size: 13px; margin: 9px 0 0; color: var(--ink); }
+
+  /* ---------------- callouts ---------------- */
+  .callout { margin-top: 16px; border-left: 2px solid var(--rule-2); padding: 2px 0 2px 15px; }
+  .callout.trap  { border-color: var(--out); }
+  .callout.proof { border-color: var(--in); }
+  .callout.unsure{ border-color: var(--amber); }
+  .callout .k {
+    font-family: "Geist Mono", monospace; font-size: 10.5px; letter-spacing: .1em;
+    text-transform: uppercase; display: block; margin-bottom: 5px;
+  }
+  .callout.trap .k  { color: var(--out); }
+  .callout.proof .k { color: var(--in); }
+  .callout.unsure .k{ color: var(--amber); }
+  .callout p { margin: 0; font-size: 14px; color: var(--ink-2); max-width: 62ch; }
+
+  code {
+    font-family: "Geist Mono", monospace; font-size: .89em;
+    background: var(--sunk); border: 1px solid var(--rule);
+    padding: 1px 5px; border-radius: 3px; color: var(--ink);
+  }
+  strong { font-weight: 600; color: var(--ink); }
+  .num { font-family: "Geist Mono", monospace; font-weight: 500; }
+
+  /* ---------------- pull quotes for slides ---------------- */
+  .lines { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); margin-top: 18px; }
+  .line { background: var(--surface); padding: 16px 18px; }
+  .line q {
+    display: block; font-size: 16px; line-height: 1.5; quotes: none;
+    letter-spacing: -.01em; text-wrap: pretty;
+  }
+  .line .src { display: block; margin-top: 8px; font-family: "Geist Mono", monospace; font-size: 11px; color: var(--ink-3); }
+
+  /* ---------------- bug table ---------------- */
+  .scroller { overflow-x: auto; margin-top: 16px; border: 1px solid var(--rule); }
+  table { border-collapse: collapse; width: 100%; min-width: 620px; background: var(--surface); }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; font-size: 13.5px; }
+  th {
+    font-family: "Geist Mono", monospace; font-size: 10.5px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-3); background: var(--sunk); white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td:first-child { color: var(--ink); font-weight: 500; }
+  td:last-child { color: var(--ink-2); }
+
+  .stack { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); margin-top: 16px;
+           grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+  .stack div { background: var(--surface); padding: 13px 15px; }
+  .stack dt { font-family: "Geist Mono", monospace; font-size: 10.5px; letter-spacing: .1em;
+              text-transform: uppercase; color: var(--ink-3); }
+  .stack dd { margin: 6px 0 0; font-size: 13.5px; color: var(--ink-2); }
+
+  footer { margin-top: 60px; padding-top: 18px; border-top: 2px solid var(--ink); color: var(--ink-3); font-size: 13px; }
+
+  a { color: var(--in); }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="mast">
+    <p class="eyebrow">LSH26-T071 &nbsp;·&nbsp; Problem 12 &nbsp;·&nbsp; Personal Ledger Manager</p>
+    <h1>Everything we shipped, and the figure that proves each one</h1>
+    <p class="standfirst">
+      One place that records spending with as little typing as possible, shows where the money
+      went, says what the rest of the month looks like, and puts a real date on every savings
+      goal. Every claim below was verified by running the app or its engine — no number here is
+      an estimate.
+    </p>
+
+    <dl class="facts">
+      <div class="fact"><dt>Required items</dt><dd>4<span> / 4 working</span></dd></div>
+      <div class="fact"><dt>Published bonuses</dt><dd>3<span> / 3 built</span></dd></div>
+      <div class="fact"><dt>Beyond the brief</dt><dd>6<span> extra features</span></dd></div>
+      <div class="fact"><dt>Sample cases passing</dt><dd>25<span> / 25</span></dd></div>
+      <div class="fact"><dt>Live</dt><dd><a href="https://lsh26-t071-p12.vercel.app">lsh26-t071-p12.vercel.app</a></dd></div>
+    </dl>
+  </header>
+
+  <!-- ================= REQUIRED ================= -->
+  <section>
+    <div class="sec-head">
+      <h2>The four required items</h2>
+      <span class="count">all working</span>
+    </div>
+    <p class="sec-note">
+      Figures are from the ledger as it opens — published case PUB-01, salary ৳50,000, viewed as
+      of 17 April 2026. Anyone can reproduce them with <code>npm run check PUB-01</code>.
+    </p>
+
+    <div class="rows">
+
+      <article class="row">
+        <div>
+          <h3><span class="tag">R1</span>Salary, expenses, and reading a photographed receipt</h3>
+          <p>
+            Set a monthly salary and add expenses three ways: photograph the receipt, paste your
+            mobile-money messages, or type four fields. The reader is called with the image and a
+            <strong>fixed response schema</strong>, so three fields and their per-field confidences
+            are decoded against that shape rather than parsed out of a hopeful JSON string.
+          </p>
+          <p>
+            What came back is shown beside the photograph, and every field is editable before
+            anything saves.
+          </p>
+          <p class="where">src/app/api/receipt/route.ts · src/components/ReceiptFlow.tsx</p>
+        </div>
+        <div class="ev">
+          <span class="ev-label">Verified on production</span>
+          <ul>
+            <li><span>Clear bill — total</span><span class="good">৳2,546.50</span></li>
+            <li><span>…not the subtotal</span><span>৳2,665.00</span></li>
+            <li><span>Day-first 11/04/2026</span><span>2026-04-11</span></li>
+            <li><span>Creased bill — amount</span><span class="warn">null @ 0.00</span></li>
+            <li><span>Creased bill — shop</span><span class="good">SHWAPNO @ 1.00</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="row">
+        <div>
+          <h3><span class="tag">R2</span>The monthly dashboard</h3>
+          <p>
+            Total spent against salary as a hero figure with a three-part meter, a ranked category
+            breakdown where each bar carries a mark at that category's whole total for last month,
+            the five largest expenses, and the change against last month.
+          </p>
+          <p>
+            Month-over-month is given <strong>two ways, because only one of them is fair
+            mid-month</strong>: the same slice of both months side by side, and the whole month
+            once the forecast plays out.
+          </p>
+          <p class="where">src/components/DashboardTab.tsx</p>
+        </div>
+        <div class="ev">
+          <span class="ev-label">Opening ledger</span>
+          <ul>
+            <li><span>Spent so far</span><span>৳27,083</span></li>
+            <li><span>of a salary of</span><span>৳50,000 (54%)</span></li>
+            <li><span>Same 17 days of March</span><span>৳32,573</span></li>
+            <li><span>Pace against March</span><span class="good">17% below</span></li>
+            <li><span>Top 5 expenses</span><span>80% of month</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="row">
+        <div>
+          <h3><span class="tag">R3</span>Forecast and written insights</h3>
+          <p>
+            Expected spending for the rest of the month, the expected position at month end, and
+            insights that name categories and amounts. <strong>Ten templates</strong>, each firing
+            with computed values or returning nothing, ranked by how much money each is about. All
+            ten fire on the opening ledger.
+          </p>
+          <p>
+            The same answer is also given as a daily rate — what you have been spending against what
+            you can afford — because that is the form it can be acted on.
+          </p>
+          <p class="where">src/lib/forecast.ts · src/lib/insights.ts</p>
+        </div>
+        <div class="ev">
+          <span class="ev-label">Opening ledger</span>
+          <ul>
+            <li><span>Forecast, rest of month</span><span>৳12,971</span></li>
+            <li><span>Clear at month end</span><span class="good">৳9,946</span></li>
+            <li><span>Spending per day</span><span>৳1,593</span></li>
+            <li><span>Can afford per day</span><span class="good">৳1,763</span></li>
+            <li><span>Insights firing</span><span>10 / 10</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="row">
+        <div>
+          <h3><span class="tag">R4</span>Savings pockets, with dates from the forecast</h3>
+          <p>
+            Name, item, target and monthly contribution. The completion date comes from running the
+            calendar <strong>forward, month by month</strong>, handing each pocket only the surplus
+            the forecast predicts, minus whatever the pockets ahead of it already took. When a month
+            is short the contribution is capped and the date slips.
+          </p>
+          <p>
+            Each card prints the naive <code>target ÷ contribution</code> figure beside the simulated
+            one, so the difference is visible rather than claimed. A DPS comparison sits alongside,
+            with the rate and compounding basis printed next to the figure.
+          </p>
+          <p class="where">src/lib/pockets.ts · src/components/PocketsTab.tsx</p>
+        </div>
+        <div class="ev">
+          <span class="ev-label">Wedding pocket — ৳300,000</span>
+          <ul>
+            <li><span>Simulated</span><span class="good">95 months</span></li>
+            <li><span>Division would say</span><span class="bad">15 months</span></li>
+            <li><span>Date</span><span>28 Feb 2034</span></li>
+            <li><span>DPS @ 8.00% balance</span><span>৳423,184.20</span></li>
+            <li><span>of which interest</span><span class="good">৳123,184.20</span></li>
+          </ul>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ================= CONSTRAINTS ================= -->
+  <section>
+    <div class="sec-head">
+      <h2>The four published constraints</h2>
+      <span class="count">each is a trap</span>
+    </div>
+    <p class="sec-note">
+      Each of these is a place a plausible-looking implementation fails. These are the slides worth
+      spending time on — they are what separates a demo from a solution.
+    </p>
+
+    <div class="rows">
+
+      <article class="row">
+        <div>
+          <h3><span class="tag">C1</span>An unsure field is shown as unsure — an amount is never guessed</h3>
+          <p>
+            The threshold is <strong>0.8</strong>. At or above it a field is pre-filled and labelled
+            with what was read. Below it the box renders <strong>empty</strong>, outlined in the
+            reserved amber, saying it could not be read. Save stays disabled until all three fields
+            are confirmed by hand, and the button counts them down.
+          </p>
+          <div class="callout unsure">
+            <span class="k">The colour is the constraint</span>
+            <p>
+              That amber — <code>#b5730a</code> — means one thing in this app and appears nowhere
+              else. Two server guards back it up: a field failing validation is downgraded to
+              &ldquo;could not read&rdquo;, and a null value can never carry a passing confidence.
+            </p>
+          </div>
+        </div>
+        <div class="ev">
+          <span class="ev-label">Creased receipt, live</span>
+          <ul>
+            <li><span>Amount</span><span class="warn">blank, amber</span></li>
+            <li><span>Date</span><span class="warn">blank, amber</span></li>
+            <li><span>Shop</span><span class="good">read, 100%</span></li>
+            <li><span>Save enabled?</span><span class="bad">no — 1/3 confirmed</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="row">
+        <div>
+          <h3><span class="tag">C2</span>The insights change when the numbers change</h3>
+          <p>
+            True by construction rather than by promise. Every line is a template over computed
+            figures — there is <strong>no stored advice and no model-written text anywhere on that
+            path</strong>. Each template either fires with real numbers or returns nothing.
+          </p>
+          <p>
+            The test harness proves it rather than asserting it: change one expense, and the page
+            rewrites itself.
+          </p>
+        </div>
+        <div class="ev">
+          <span class="ev-label">Automated check</span>
+          <p class="single">Edit one expense by ৳9,000</p>
+          <ul>
+            <li><span>Insights rewritten</span><span class="good">8 of 10</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="row">
+        <div>
+          <h3><span class="tag">C3</span>Pocket dates come from the forecast, not from division</h3>
+          <p>
+            There is no <code>target / monthlyContribution</code> anywhere in
+            <code>src/lib/pockets.ts</code>. Division promises this person a wedding in 2027 that the
+            arithmetic puts in <strong>2034</strong>.
+          </p>
+          <div class="callout trap">
+            <span class="k">Why it matters</span>
+            <p>
+              Across all 25 published cases the simulation puts <strong>24 dates later</strong> than
+              division would, and reports <strong>15 pockets as not reachable at all</strong> rather
+              than inventing a date for them.
+            </p>
+          </div>
+        </div>
+        <div class="ev">
+          <span class="ev-label">All 25 cases, 75 pockets</span>
+          <ul>
+            <li><span>Later than division</span><span class="good">24</span></li>
+            <li><span>Same as division</span><span>36</span></li>
+            <li><span>Not reachable</span><span class="bad">15</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="row">
+        <div>
+          <h3><span class="tag">C4</span>The DPS rate, and how interest is added</h3>
+          <p>
+            <strong>8.00% a year, compounded monthly</strong>, deposit at the start of each month —
+            printed on screen next to every figure, not only in the README, and editable because the
+            published cases carry rates from 7.50% to 10.00%.
+          </p>
+          <p>
+            Each month: <code>balance += deposit</code>, then interest of
+            <code>balance × rate ÷ 12 ÷ 100</code> rounded <strong>half up to the paisa</strong> and
+            added, so later months earn on it. All money in the app is an <strong>integer number of
+            paisa</strong> — never a float — because that rule rounds every month and floating point
+            would drift over a 190-month simulation.
+          </p>
+        </div>
+        <div class="ev">
+          <span class="ev-label">Checked against hand-worked values</span>
+          <ul>
+            <li><span>৳1,000 @ 8%, month 1</span><span class="good">৳6.67</span></li>
+            <li><span>month 2</span><span class="good">৳13.38</span></li>
+            <li><span>Exactly half a paisa</span><span class="good">rounds up</span></li>
+            <li><span>…not to even</span><span>confirmed</span></li>
+          </ul>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ================= BONUSES ================= -->
+  <section>
+    <div class="sec-head">
+      <h2>The three published bonus features</h2>
+      <span class="count">all built</span>
+    </div>
+    <p class="sec-note">
+      The brief allows these only once the four required items work. They do.
+    </p>
+
+    <div class="rows">
+      <article class="row">
+        <div>
+          <h3><span class="tag">B1</span>The what-if control</h3>
+          <p>
+            Cut one category by a percentage and every pocket completion date moves — on the same
+            frame as the drag. <strong>No debounce, no memoisation</strong>: each drag event re-runs
+            the whole forecast and the whole simulation from scratch, because they are pure functions
+            over a few hundred records.
+          </p>
+          <p>
+            The cut applies to <em>future</em> spending only. Money already spent cannot be un-spent,
+            which is why cutting Rent barely moves the month in progress but moves every month after.
+          </p>
+          <p class="where">src/components/WhatIfControl.tsx</p>
+        </div>
+        <div class="ev">
+          <span class="ev-label">A 60% cut, live</span>
+          <ul>
+            <li><span>Wedding</span><span class="good">2034 → 2028</span></li>
+            <li><span>Laptop</span><span class="good">2038 → 2029</span></li>
+            <li><span>Bike</span><span class="good">2042 → 2030</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="row">
+        <div>
+          <h3><span class="tag">B2</span>Change a contribution, see every date move</h3>
+          <p>
+            A contribution slider on each pocket card, moving its own date as the thumb moves. The
+            dates cross-fade in the direction they travelled — a later date rises, an earlier one
+            drops — so the direction reads before the text does.
+          </p>
+        </div>
+        <div class="ev">
+          <span class="ev-label">Behaviour</span>
+          <p class="single">Recomputed per change event,<br>never on a timer</p>
+        </div>
+      </article>
+
+      <article class="row">
+        <div>
+          <h3><span class="tag">B3</span>Automatic recurring detection</h3>
+          <p>
+            A shop billing in two consecutive months within 15% on the amount is marked
+            <code>recurring</code> in the log and in the monthly-charges list.
+          </p>
+          <p>
+            The forecast uses a deliberately <em>wider</em> notion of a monthly charge than this
+            badge does, since a utility bill recurs monthly while varying far more than 15%.
+          </p>
+          <p class="where">src/lib/forecast.ts — findMonthlyCharges()</p>
+        </div>
+        <div class="ev">
+          <span class="ev-label">Detected on the opening ledger</span>
+          <ul>
+            <li><span>Landlord — Rent</span><span class="good">recurring</span></li>
+            <li><span>Robi recharge — Mobile</span><span class="good">recurring</span></li>
+            <li><span>Monthly charges found</span><span>5</span></li>
+          </ul>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ================= EXTRAS ================= -->
+  <section>
+    <div class="sec-head">
+      <h2>Beyond the brief</h2>
+      <span class="count">6 extra features</span>
+    </div>
+    <p class="sec-note">
+      None of these is one of the three published bonuses. They were built after all four required
+      items and all three bonuses were working.
+    </p>
+
+    <div class="rows">
+
+      <article class="row">
+        <div>
+          <h3><span class="tag">X1</span>Goal seek — the slider run backwards</h3>
+          <p>
+            The slider asks what a cut does to a date. This asks the question people actually have:
+            <strong>&ldquo;I want the Laptop by October 2027 — what has to be true?&rdquo;</strong>
+          </p>
+          <p>
+            Nothing is modelled. For each candidate it binary-searches the cut percentage and runs
+            the <em>real</em> forecast and the <em>real</em> simulation at every step, so every date
+            shown is one the app would produce from the slider itself, and every cut is the smallest
+            whole percent that works.
+          </p>
+          <div class="callout proof">
+            <span class="k">Measuring changed the design</span>
+            <p>
+              Almost every deadline first came back &ldquo;impossible&rdquo; — the Laptop sits behind
+              a ৳20,000-a-month Wedding pocket. That exposed the lever already in the app:
+              <strong>the funding order is free</strong>. The solver now tries &ldquo;fund this one
+              first&rdquo; before asking anyone to spend less.
+            </p>
+          </div>
+          <p class="where">src/lib/goalSeek.ts · src/components/GoalSeek.tsx</p>
+        </div>
+        <div class="ev">
+          <span class="ev-label">&ldquo;Laptop by October 2027&rdquo;</span>
+          <ul>
+            <li><span>Plan</span><span class="good">fund first, Education −55%</span></li>
+            <li><span>Frees</span><span>৳4,299 / month</span></li>
+            <li><span>Five years out</span><span class="good">fund first — free</span></li>
+            <li><span>Search cost</span><span>40–150 ms</span></li>
+            <li><span>Plans re-verified</span><span class="good">all, and minimal</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="row">
+        <div>
+          <h3><span class="tag">X2</span>Mobile money — paste a month at once</h3>
+          <p>
+            In Dhaka most spending never touches paper: it is a bKash, Nagad, Rocket or Upay
+            confirmation. Those have a consistent shape, so they are read <strong>locally and
+            deterministically</strong> — no model, no key, no network, no waiting.
+          </p>
+          <p>
+            It keeps the receipt screen's discipline. An unreadable amount goes amber and is never
+            imported as a guess; money coming <em>in</em> is recognised and excluded with the count
+            stated; an already-imported message is matched by transaction id; the category comes from
+            <strong>your own history</strong> for that shop.
+          </p>
+          <p class="where">src/lib/mobileMoney.ts · src/components/SmsImport.tsx</p>
+        </div>
+        <div class="ev">
+          <span class="ev-label">Four messages, verified</span>
+          <ul>
+            <li><span>To import</span><span class="good">3</span></li>
+            <li><span>Salary credit</span><span>skipped</span></li>
+            <li><span>Ledger</span><span>41 → 44</span></li>
+            <li><span>Same paste again</span><span class="good">3 blocked</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="row">
+        <div>
+          <h3><span class="tag">X3</span>An assistant that can act, not just answer</h3>
+          <p>
+            Ask about your month, or just say what you spent. It can record an expense, create a
+            pocket, change a contribution, run a what-if, load a sample case or open a screen.
+          </p>
+          <p>
+            Two properties make it safe next to someone's money. <strong>It never computes a
+            figure</strong> — every request carries a digest built by the same forecast and
+            simulation that draw the screens. And <strong>it cannot write to the ledger</strong> — it
+            returns a typed, validated proposal rendered as an Apply / Discard card.
+          </p>
+          <div class="callout proof">
+            <span class="k">It refuses to invent</span>
+            <p>
+              Asked for January 2025 it answers &ldquo;I do not have your spending figures for
+              January 2025&rdquo; and offers what it does have. Told &ldquo;I bought something at
+              Agora&rdquo; it asks for the amount rather than guessing.
+            </p>
+          </div>
+          <p class="where">src/lib/assistant.ts · src/app/api/chat/route.ts</p>
+        </div>
+        <div class="ev">
+          <span class="ev-label">Grounding</span>
+          <ul>
+            <li><span>Figures from engine</span><span class="good">all</span></li>
+            <li><span>Model writes to store</span><span class="bad">never</span></li>
+            <li><span>Requirement-3 insights</span><span class="good">untouched</span></li>
+            <li><span>Works with no key</span><span>degrades cleanly</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="row">
+        <div>
+          <h3><span class="tag">X4</span>Real Postgres persistence, without breaking the demo</h3>
+          <p>
+            localStorage stays the source of truth, because the live URL has to open and work with no
+            setup — a required database would be a regression, not a feature. Backup is
+            <strong>additive and opt-in</strong>: save once, get a ledger key, and changes push in the
+            background; the same key restores everything on another device.
+          </p>
+          <p>
+            Security without accounts: row level security is on with <strong>no policies</strong>, so
+            the publishable key can select nothing. The only surface is two security-definer functions
+            that each require the ledger's own unguessable uuid.
+          </p>
+          <p class="where">supabase/migrations/0001_ledger.sql · src/app/api/ledger/route.ts</p>
+        </div>
+        <div class="ev">
+          <span class="ev-label">Probed against the live project</span>
+          <ul>
+            <li><span>List every ledger</span><span class="bad">permission denied</span></li>
+            <li><span>Read with correct key</span><span class="good">works</span></li>
+            <li><span>Read with wrong key</span><span class="good">null</span></li>
+            <li><span>Push 6,000 rows</span><span class="bad">rejected</span></li>
+            <li><span>Cross-device restore</span><span class="good">42 + 3, exact</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="row">
+        <div>
+          <h3><span class="tag">X5</span>All 25 published cases, loadable in the app</h3>
+          <p>
+            The organisers' fixture ships unmodified in <code>public/sample-data</code>. Setup →
+            <em>Show the 25 cases</em> replaces the salary, expenses, pockets, DPS rate
+            <strong>and the date being viewed</strong> with that case's own values.
+          </p>
+          <p>
+            That last one matters: every case carries its own <code>today</code>, so the app treats
+            &ldquo;today&rdquo; as a setting rather than reading the clock. A case dated April 2026
+            judged on a machine whose clock says August would otherwise compute the entire forecast
+            against the wrong month.
+          </p>
+        </div>
+        <div class="ev">
+          <span class="ev-label">Judge-facing</span>
+          <ul>
+            <li><span>Cases in-app</span><span class="good">25</span></li>
+            <li><span>Setup needed</span><span class="good">none</span></li>
+            <li><span>Reset to first-run</span><span>one click</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="row">
+        <div>
+          <h3><span class="tag">X6</span>A verification harness that runs the real engine</h3>
+          <p>
+            <code>npm run check</code> runs the shipped forecast, pocket simulation and DPS
+            arithmetic over all 25 published cases and asserts invariants that would catch a
+            plausible-looking wrong answer — including that rent is never extrapolated past one
+            month, and that the simulation never beats <code>target ÷ contribution</code>.
+          </p>
+          <p>
+            This is only possible because the engine has <strong>no React import anywhere</strong>:
+            2,381 lines of pure functions the browser and the terminal both run.
+          </p>
+        </div>
+        <div class="ev">
+          <span class="ev-label">Model quality, 25 cases</span>
+          <ul>
+            <li><span>Projected vs last month</span><span class="good">0.90–1.22×</span></li>
+            <li><span>Median</span><span>1.08×</span></li>
+            <li><span>Rent extrapolated</span><span class="good">never</span></li>
+          </ul>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ================= WHAT WENT WRONG ================= -->
+  <section>
+    <div class="sec-head">
+      <h2>Six bugs the verification caught</h2>
+      <span class="count">the strongest slide</span>
+    </div>
+    <p class="sec-note">
+      Every one of these looked correct in code review and was only caught by running the thing —
+      in a terminal, in a browser, or against the live deployment. This is the most honest evidence
+      that the numbers can be trusted.
+    </p>
+
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>What was wrong</th><th>How it was caught</th><th>Consequence if shipped</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Assistant recorded an approved expense twice</td>
+            <td>Driving the panel in a browser: 41 rows became 43</td>
+            <td>৳420 posted as ৳840 — a side effect inside a React state updater</td>
+          </tr>
+          <tr>
+            <td>Category deltas compared a part-month to a full month</td>
+            <td>Looking at the rendered dashboard</td>
+            <td>Health showed a ৳4,662 &ldquo;saving&rdquo; purely because the month was half over</td>
+          </tr>
+          <tr>
+            <td>Database size limits could be bypassed</td>
+            <td>Supabase's own security advisor</td>
+            <td>The RPC is callable directly, so a TypeScript-only limit was no limit</td>
+          </tr>
+          <tr>
+            <td>SMS parser read the balance, not the payment</td>
+            <td>A test written before the parser</td>
+            <td>&ldquo;Payment Tk 450 … Balance Tk 4,550&rdquo; would import ৳4,550</td>
+          </tr>
+          <tr>
+            <td>Goal seek said &ldquo;impossible&rdquo; almost everywhere</td>
+            <td>Measuring the first working version</td>
+            <td>Missed the free lever entirely — funding order, not spending</td>
+          </tr>
+          <tr>
+            <td>A zero surplus rendered as <code>৳+0</code></td>
+            <td>Loading the deployed site with an empty ledger</td>
+            <td>The sign sat inside the currency mark</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= LINES ================= -->
+  <section>
+    <div class="sec-head">
+      <h2>Lines to put on a slide</h2>
+      <span class="count">verbatim, all verified</span>
+    </div>
+
+    <div class="lines">
+      <div class="line">
+        <q>Division promises this person a wedding in 2027. The arithmetic puts it in 2034.</q>
+        <span class="src">R4 · the constraint that matters most</span>
+      </div>
+      <div class="line">
+        <q>The app never fills in an amount it is not sure of. It leaves the box empty and says so.</q>
+        <span class="src">C1 · the amber appears nowhere else in the product</span>
+      </div>
+      <div class="line">
+        <q>Change one expense by ৳9,000 and eight of the ten insights rewrite themselves — because they are functions of the numbers, not advice about them.</q>
+        <span class="src">C2 · proven by the test harness</span>
+      </div>
+      <div class="line">
+        <q>Rent is paid on the 3rd. Extrapolate it from a daily rate on the 17th and you forecast ৳16,000 as ৳28,000 — and every savings date downstream is wrong.</q>
+        <span class="src">The forecast model, in one sentence</span>
+      </div>
+      <div class="line">
+        <q>Tell it the date you want, and it tells you what would have to be true — starting with the change that costs nothing.</q>
+        <span class="src">X1 · goal seek</span>
+      </div>
+      <div class="line">
+        <q>Most spending in Dhaka is a bKash message, not a paper receipt. So paste the month — it is read on your phone, with no key and no network.</q>
+        <span class="src">X2 · mobile money</span>
+      </div>
+      <div class="line">
+        <q>Every figure the assistant can quote was computed by the app. Ask it about January 2025 and it says it does not have that.</q>
+        <span class="src">X3 · the assistant refuses to invent</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CRAFT ================= -->
+  <section>
+    <div class="sec-head">
+      <h2>Decisions worth a slide of their own</h2>
+      <span class="count">technical execution</span>
+    </div>
+
+    <dl class="stack">
+      <div>
+        <dt>Integer paisa, never floats</dt>
+        <dd>The published DPS rule rounds half up every month; a float would drift across 190 months.</dd>
+      </div>
+      <div>
+        <dt>&ldquo;Today&rdquo; is a setting</dt>
+        <dd>Every published case carries its own date. Reading the clock would compute the wrong month.</dd>
+      </div>
+      <div>
+        <dt>A pure engine</dt>
+        <dd>2,381 lines with no React import — which is why the slider needs no debounce and the terminal can run the same code.</dd>
+      </div>
+      <div>
+        <dt>Seven runtime dependencies</dt>
+        <dd>Recharts and shadcn/ui were installed, went unused, and were removed rather than shipped dead.</dd>
+      </div>
+      <div>
+        <dt>Colour does one job</dt>
+        <dd>Money out, money in, and a reserved amber — checked with a palette validator at 11.4 ΔE under protanopia, all above 3:1.</dd>
+      </div>
+      <div>
+        <dt>Two layouts, one tree</dt>
+        <dd>A bottom bar on a phone, a fixed sidebar from lg up. Zero horizontal overflow at 360, 430, 1512 and 1920px.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <!-- ================= LIMITS ================= -->
+  <section>
+    <div class="sec-head">
+      <h2>What we would say if asked what is missing</h2>
+      <span class="count">stated, not hidden</span>
+    </div>
+    <p class="sec-note">
+      Every one of these is already written into the README and the manifest. Saying them first is
+      stronger than being asked.
+    </p>
+
+    <div class="rows">
+      <article class="row">
+        <div>
+          <h3>No accounts</h3>
+          <p>
+            A backed-up ledger is protected only by its unguessable key — good enough to demonstrate
+            persistence, not good enough for real money. Supabase Auth with RLS keyed on
+            <code>auth.uid()</code> is the fix, and the client helpers are already wired for it.
+          </p>
+        </div>
+        <div class="ev"><span class="ev-label">Next step</span><p class="single">Real auth, then<br>drop the service route</p></div>
+      </article>
+      <article class="row">
+        <div>
+          <h3>Two months of history</h3>
+          <p>
+            Only the current and previous month feed the forecast. A third would improve the
+            daily-rate blend and let seasonality — Eid, admission season, winter gas bills — show.
+          </p>
+        </div>
+        <div class="ev"><span class="ev-label">Effect today</span><p class="single">Blend is weighted by<br>elapsed days instead</p></div>
+      </article>
+      <article class="row">
+        <div>
+          <h3>Recurring matching is exact-name</h3>
+          <p>
+            &ldquo;GP recharge&rdquo; and &ldquo;Grameenphone&rdquo; are not recognised as the same
+            biller.
+          </p>
+        </div>
+        <div class="ev"><span class="ev-label">Scope</span><p class="single">Known, documented</p></div>
+      </article>
+    </div>
+  </section>
+
+  <footer>
+    Repository <code>lsh26-t071-p12</code> · commit <code>cd2611a</code> ·
+    <a href="https://lsh26-t071-p12.vercel.app">lsh26-t071-p12.vercel.app</a><br>
+    Every figure on this page was produced by running the app or its test harness. Nothing here is
+    an estimate.
+  </footer>
+
+</div>
+</body>
+</html>
