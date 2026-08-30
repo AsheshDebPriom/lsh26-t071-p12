@@ -299,6 +299,23 @@ How it is kept safe without accounts:
 - A save is a single Postgres function (`save_ledger`) so it is one transaction — a save can never half-succeed and leave expenses attached to a salary that was not written.
 - Money is `bigint` paisa in the database, matching the application. A float column would reintroduce exactly the drift the app avoids everywhere else.
 - Everything read back is re-validated in `src/lib/sync.ts` before it reaches the store: a row without a positive integer amount or an ISO date is dropped rather than allowed to put a `NaN` through the forecast.
+- Payload bounds live in `save_ledger` itself, not only in the API route. The function is reachable directly at `/rest/v1/rpc/save_ledger` with the publishable key, so a limit enforced only in TypeScript could simply be stepped around.
+
+Verified against the live project rather than asserted:
+
+| Check | Result |
+|---|---|
+| List every ledger with the publishable key | `permission denied for table ledgers` |
+| Read every expense with it | `permission denied for table expenses` |
+| Read one ledger *with* its key | works |
+| Read with a wrong key | `null` |
+| Push 6,000 expenses straight at the RPC | `too many expenses in one ledger (limit 5000)` |
+| Back up on one browser, restore on another | 42 expenses and 3 pockets, amounts exact to the paisa |
+
+Supabase's security advisor flags two things on this schema, both deliberate:
+`rls_enabled_no_policy` on all three tables — that *is* the lock — and
+`anon_security_definer_function_executable` on the two functions, which is the
+single intended door and still requires a ledger's uuid.
 
 The honest limitation: **the ledger key is the only credential.** Anyone holding
 it can read and replace that ledger. There are no accounts in this build, and the
@@ -396,6 +413,7 @@ with the arrows.
 
 - **Persistence.** The working copy lives in `localStorage` under the key `ledger-v1`, via zustand's `persist` middleware, and that is the source of truth. Backup to Postgres is real but optional and opt-in — until you turn it on, nothing leaves the browser and clearing site data clears the ledger.
 - **Accounts.** There are none. A backed-up ledger is protected only by its key, which is unguessable but shareable — good enough to demonstrate persistence, not good enough for real money.
+- **Rate limiting.** There is none on `save_ledger`, so anyone holding the publishable key could create ledgers in bulk. Payload size is bounded in the database; creation rate is not. Real auth is the fix, not a counter.
 - **Seeded history.** The two months the app opens with are published case PUB-01, not a real person's spending.
 - **The DPS.** An arithmetic illustration of the published rule. A real DPS also has a fixed term, a penalty for a missed instalment and tax on the interest — none of which is modelled. The app says so next to the figure.
 - **Salary.** A single number entered by the user. No payroll integration, no mid-month changes, and it is assumed to arrive every month.

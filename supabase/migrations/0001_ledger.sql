@@ -8,6 +8,9 @@
 -- Money is stored as an integer number of paisa, matching the application. A
 -- numeric/float column here would reintroduce exactly the drift the app avoids
 -- by never holding money as a float.
+--
+-- Applied to the project as two migrations: ledger_backup_schema and
+-- bound_ledger_payload_size. This file is the combined, current state.
 
 create extension if not exists "pgcrypto";
 
@@ -103,8 +106,24 @@ security definer
 set search_path = public, pg_temp
 as $$
 declare
-  v_id uuid := nullif(payload->>'ledgerId', '')::uuid;
+  v_id       uuid  := nullif(payload->>'ledgerId', '')::uuid;
+  v_expenses jsonb := coalesce(payload->'expenses', '[]'::jsonb);
+  v_pockets  jsonb := coalesce(payload->'pockets',  '[]'::jsonb);
 begin
+  -- Bounds live here, not only in the API route. save_ledger is reachable
+  -- directly at /rest/v1/rpc/save_ledger with the publishable key, so a limit
+  -- enforced only in TypeScript can simply be stepped around. A real ledger is
+  -- tens of rows; these ceilings sit far above any honest use.
+  if jsonb_typeof(v_expenses) <> 'array' or jsonb_typeof(v_pockets) <> 'array' then
+    raise exception 'expenses and pockets must be arrays' using errcode = '22023';
+  end if;
+  if jsonb_array_length(v_expenses) > 5000 then
+    raise exception 'too many expenses in one ledger (limit 5000)' using errcode = '22023';
+  end if;
+  if jsonb_array_length(v_pockets) > 100 then
+    raise exception 'too many pockets in one ledger (limit 100)' using errcode = '22023';
+  end if;
+
   if v_id is null then
     insert into public.ledgers (salary_paisa, as_of_date, dps_annual_rate_percent, loaded_case_id)
     values (
@@ -153,7 +172,7 @@ begin
       (select array_agg(value::text) from jsonb_array_elements_text(e->'correctedFields')),
       '{}'
     )
-  from jsonb_array_elements(coalesce(payload->'expenses', '[]'::jsonb)) as e;
+  from jsonb_array_elements(v_expenses) as e;
 
   insert into public.pockets (ledger_id, id, name, item, target_paisa, monthly_contribution_paisa, priority, created_at_ms)
   select
@@ -165,7 +184,7 @@ begin
     (p->>'monthlyContribution')::bigint,
     coalesce((p->>'priority')::int, 0),
     coalesce((p->>'createdAt')::bigint, 0)
-  from jsonb_array_elements(coalesce(payload->'pockets', '[]'::jsonb)) as p;
+  from jsonb_array_elements(v_pockets) as p;
 
   return v_id;
 end;

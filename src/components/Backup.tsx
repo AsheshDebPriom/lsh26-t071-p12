@@ -120,6 +120,18 @@ export function BackupStatus({ className }: { className?: string }) {
   );
 }
 
+/** The sidebar's one line about where this ledger actually lives. */
+export function BackupHint() {
+  const ledgerId = useLedger((s) => s.ledgerId);
+  return (
+    <p className="pt-0.5 text-[10.5px] leading-relaxed text-ink-3">
+      {ledgerId
+        ? "A copy is saved off this device. Your key is in Setup."
+        : "Kept in this browser. Back it up from Setup to keep a copy off this device."}
+    </p>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 
 export function BackupSection() {

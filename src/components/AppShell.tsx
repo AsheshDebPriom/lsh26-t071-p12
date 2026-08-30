@@ -23,7 +23,7 @@ import { useLedger } from "@/store/useLedger";
 
 import { AddExpenseSheet } from "./AddExpenseSheet";
 import { AssistantPanel } from "./AssistantPanel";
-import { BackupStatus, useAutoBackup } from "./Backup";
+import { BackupHint, BackupStatus, useAutoBackup } from "./Backup";
 import { DashboardTab } from "./DashboardTab";
 import { ForecastTab } from "./ForecastTab";
 import { LogTab } from "./LogTab";
@@ -177,9 +177,7 @@ export function AppShell() {
             Setup &amp; sample cases
           </Button>
           <BackupStatus className="pt-1" />
-          <p className="pt-0.5 text-[10.5px] leading-relaxed text-ink-3">
-            Kept in this browser. Back it up from Setup to keep a copy off this device.
-          </p>
+          <BackupHint />
         </div>
       </aside>
 
