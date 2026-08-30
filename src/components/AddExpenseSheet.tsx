@@ -14,10 +14,11 @@ import { useLedger } from "@/store/useLedger";
 
 import { ManualExpenseForm } from "./ExpenseForm";
 import { ReceiptFlow } from "./ReceiptFlow";
+import { SmsImport } from "./SmsImport";
 import { Sheet } from "./Sheet";
 import { cn } from "./ui";
 
-type Mode = "choose" | "manual" | "receipt";
+type Mode = "choose" | "manual" | "receipt" | "sms";
 
 export function AddExpenseSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const today = useLedger((s) => s.settings.today);
@@ -38,17 +39,19 @@ export function AddExpenseSheet({ open, onClose }: { open: boolean; onClose: () 
     <Sheet
       open={open}
       onClose={close}
-      wide={mode === "receipt"}
+      wide={mode === "receipt" || mode === "sms"}
       title={
         mode === "receipt"
           ? "Check what was read"
-          : mode === "manual"
-            ? "Type in an expense"
-            : "Add an expense"
+          : mode === "sms"
+            ? "Paste your mobile money messages"
+            : mode === "manual"
+              ? "Type in an expense"
+              : "Add an expense"
       }
       subtitle={
         mode === "choose"
-          ? "Photograph the receipt, or type it in — both end up in the same ledger."
+          ? "Three ways in. They all end up in the same ledger."
           : undefined
       }
     >
@@ -58,6 +61,11 @@ export function AddExpenseSheet({ open, onClose }: { open: boolean; onClose: () 
             title="Photograph a receipt"
             body="Reads the amount, date and shop from the picture. You check every field before it saves."
             onClick={() => setMode("receipt")}
+          />
+          <ChoiceButton
+            title="Paste mobile money messages"
+            body="bKash, Nagad, Rocket or Upay. Read on your phone, no key needed — paste a month at once."
+            onClick={() => setMode("sms")}
           />
           <ChoiceButton
             title="Type it in"
@@ -78,6 +86,8 @@ export function AddExpenseSheet({ open, onClose }: { open: boolean; onClose: () 
           onCancel={() => setMode("choose")}
         />
       ) : null}
+
+      {mode === "sms" ? <SmsImport onDone={close} onBack={() => setMode("choose")} /> : null}
 
       {mode === "receipt" ? (
         <ReceiptFlow

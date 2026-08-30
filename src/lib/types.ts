@@ -23,8 +23,13 @@ export type Expense = {
   category: string;
   shop: string;
   amount: Paisa;
-  /** Set when the row came from a photographed receipt rather than typing. */
-  source?: "manual" | "receipt";
+  /** Where the row came from, when it was not typed by hand. */
+  source?: "manual" | "receipt" | "sms";
+  /**
+   * Transaction id from a mobile money message. Kept so pasting the same
+   * messages again cannot import them twice.
+   */
+  reference?: string;
   /** Fields the user had to correct because the read was not confident. */
   correctedFields?: ReceiptField[];
 };
