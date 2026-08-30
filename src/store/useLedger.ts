@@ -3,9 +3,13 @@
 /**
  * The whole application state.
  *
- * Persisted to localStorage — there is no database and no account. That is a
- * deliberate limitation for this build and it is declared in the README: the
- * data lives in one browser and does not travel.
+ * localStorage is the source of truth, always. The live URL has to open and
+ * work with no setup, so the app can never depend on a network round trip to
+ * show a ledger.
+ *
+ * Backing up to the database is opt-in and additive: once the user asks for it,
+ * `ledgerId` holds the key the ledger is saved under and changes are pushed in
+ * the background. Nothing here waits on that, and nothing breaks without it.
  */
 
 import { create } from "zustand";
@@ -21,6 +25,7 @@ import {
   SEED_SALARY,
   SEED_TODAY,
 } from "@/lib/seed";
+import type { SyncStatus } from "@/lib/sync";
 import type {
   CategoryAdjustment,
   Expense,
@@ -37,6 +42,16 @@ export type LedgerState = {
   /** What-if cuts. Deliberately not persisted: it is an exploration, not data. */
   adjustments: CategoryAdjustment[];
   hydrated: boolean;
+
+  /**
+   * The key this ledger was last backed up under, if it ever was. Null means
+   * the ledger has only ever lived in this browser, which is the default and a
+   * perfectly good place for it to stay.
+   */
+  ledgerId: string | null;
+  lastSavedAt: string | null;
+  /** Transient, never persisted — what the backup is doing right now. */
+  syncStatus: SyncStatus;
 
   setSalary: (paisa: Paisa) => void;
   setToday: (date: string) => void;
@@ -58,6 +73,19 @@ export type LedgerState = {
   resetToSeed: () => void;
   startEmpty: () => void;
   markHydrated: () => void;
+
+  setBackupKey: (id: string | null, savedAt: string | null) => void;
+  setSyncStatus: (s: SyncStatus) => void;
+  /** Replace everything from a restored backup. */
+  applySnapshot: (s: {
+    ledgerId: string;
+    salaryPaisa: number;
+    asOfDate: string;
+    dpsAnnualRatePercent: number;
+    loadedCaseId: string | null;
+    expenses: Expense[];
+    pockets: Pocket[];
+  }) => void;
 };
 
 let counter = 0;
@@ -76,6 +104,9 @@ const seedState = () => ({
     loadedCaseId: SEED_CASE_ID,
   } satisfies Settings,
   adjustments: [] as CategoryAdjustment[],
+  ledgerId: null as string | null,
+  lastSavedAt: null as string | null,
+  syncStatus: { state: "idle" } as SyncStatus,
 });
 
 export const useLedger = create<LedgerState>()(
@@ -186,6 +217,24 @@ export const useLedger = create<LedgerState>()(
         }),
 
       markHydrated: () => set({ hydrated: true }),
+
+      setBackupKey: (id, savedAt) => set({ ledgerId: id, lastSavedAt: savedAt }),
+      setSyncStatus: (syncStatus) => set({ syncStatus }),
+
+      applySnapshot: (snap) =>
+        set({
+          salary: snap.salaryPaisa,
+          expenses: snap.expenses,
+          pockets: snap.pockets,
+          settings: {
+            today: snap.asOfDate,
+            dpsAnnualRatePercent: snap.dpsAnnualRatePercent,
+            loadedCaseId: snap.loadedCaseId,
+          },
+          adjustments: [],
+          ledgerId: snap.ledgerId,
+          lastSavedAt: new Date().toISOString(),
+        }),
     }),
     {
       name: "ledger-v1",
@@ -195,6 +244,8 @@ export const useLedger = create<LedgerState>()(
         expenses: s.expenses,
         pockets: s.pockets,
         settings: s.settings,
+        ledgerId: s.ledgerId,
+        lastSavedAt: s.lastSavedAt,
       }),
       onRehydrateStorage: () => (state) => {
         state?.markHydrated();

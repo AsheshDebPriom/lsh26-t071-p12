@@ -40,16 +40,22 @@ npm run dev            # http://localhost:3000
 The app is fully usable with no configuration — the sample ledger, the dashboard,
 the forecast, the insights and the pockets all work offline with no key.
 
-One environment variable enables the receipt camera:
+Three environment variables unlock the optional extras. All are read **only** on
+the server and none reaches the browser:
 
 ```
-GEMINI_API_KEY=<your Google AI Studio key>
+GEMINI_API_KEY=<your Google AI Studio key>      # receipt reading + the assistant
+SUPABASE_URL=https://<project-ref>.supabase.co  # backup (optional)
+SUPABASE_SERVICE_ROLE_KEY=<service role key>    # backup (optional)
 ```
 
-Put it in `.env.local` for local development, or in the deployment's environment
-variables. It is read **only** on the server, inside `src/app/api/receipt/route.ts`,
-and never reaches the browser. Without it, that route answers with a clear message
-and the "type it in" path continues to work.
+Put them in `.env.local` for local development, or in the deployment's environment
+variables. Every one of them is optional:
+
+- Without `GEMINI_API_KEY`, the receipt route and the assistant answer with a clear message and the "type it in" path is unaffected.
+- Without the Supabase pair, backup reports itself unavailable and the ledger simply stays in the browser, exactly as before.
+
+The database schema is in `supabase/migrations/0001_ledger.sql`.
 
 Other commands:
 
@@ -272,6 +278,28 @@ All four required items work, so all three bonuses were built:
 
 ---
 
+## Backup (optional)
+
+The ledger lives in `localStorage` and that is the source of truth. It has to be:
+the live URL must open and work with no setup, so the app can never wait on a
+network round trip to show someone their month.
+
+Backup is therefore **additive and opt-in**. Setup → *Back up this ledger* saves a
+copy and returns a **ledger key**; from then on changes are pushed in the
+background after a short quiet period, and the same key restores everything on
+another device. Turn it off and the browser simply stops sending.
+
+How it is kept safe without accounts:
+
+- Row level security is **on with no policies** on all three tables, so an anon key can read nothing. Only the service role can, and that key lives in `src/app/api/ledger/route.ts` on the server.
+- A save is a single Postgres function (`save_ledger`) so it is one transaction — a save can never half-succeed and leave expenses attached to a salary that was not written.
+- Money is `bigint` paisa in the database, matching the application. A float column would reintroduce exactly the drift the app avoids everywhere else.
+- Everything read back is re-validated in `src/lib/sync.ts` before it reaches the store: a row without a positive integer amount or an ISO date is dropped rather than allowed to put a `NaN` through the forecast.
+
+The honest limitation: **the ledger key is the only credential.** Anyone holding
+it can read and replace that ledger. There are no accounts in this build, and the
+app says so on screen next to the key.
+
 ## The assistant
 
 Ask it anything about your money, or just tell it what you spent.
@@ -362,7 +390,8 @@ with the arrows.
 
 ## What is mocked
 
-- **Persistence.** Everything lives in `localStorage` under the key `ledger-v1`, via zustand's `persist` middleware. There is no database, no account and no server copy. Data does not travel between browsers or devices, and clearing site data clears the ledger.
+- **Persistence.** The working copy lives in `localStorage` under the key `ledger-v1`, via zustand's `persist` middleware, and that is the source of truth. Backup to Postgres is real but optional and opt-in — until you turn it on, nothing leaves the browser and clearing site data clears the ledger.
+- **Accounts.** There are none. A backed-up ledger is protected only by its key, which is unguessable but shareable — good enough to demonstrate persistence, not good enough for real money.
 - **Seeded history.** The two months the app opens with are published case PUB-01, not a real person's spending.
 - **The DPS.** An arithmetic illustration of the published rule. A real DPS also has a fixed term, a penalty for a missed instalment and tax on the interest — none of which is modelled. The app says so next to the figure.
 - **Salary.** A single number entered by the user. No payroll integration, no mid-month changes, and it is assumed to arrive every month.
@@ -381,7 +410,7 @@ with the arrows.
 
 ## What would come next
 
-1. **A real backend**, so the ledger survives a lost phone. This is the single biggest gap and the one every other item depends on.
+1. **Real accounts.** Backup now exists and a ledger survives a lost phone, but a key is not a login. Supabase Auth plus RLS keyed on `auth.uid()` would replace the service-role route and let the browser talk to Postgres directly.
 2. **More history.** Twelve months would let the forecast see seasonality — Eid, admission season, winter gas bills — rather than blending two months.
 3. **Reading the mobile-money screenshots directly.** bKash and Nagad confirmations are a fixed layout; they would parse far more reliably than a thermal receipt and are how much of this spending is actually recorded.
 4. **Confidence learned from corrections.** The app already records which fields a user had to fix (`correctedFields` on each expense). Enough of those and the threshold could be tuned per field rather than fixed at 0.8.

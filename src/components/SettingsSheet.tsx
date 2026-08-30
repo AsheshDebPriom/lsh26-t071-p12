@@ -17,6 +17,7 @@ import { fromPaisa, toPaisa } from "@/lib/money";
 import { useLedger } from "@/store/useLedger";
 import type { PublishedCase } from "@/lib/types";
 
+import { BackupSection } from "./Backup";
 import { Button, Card, Input, Label, Pill, Taka } from "./ui";
 import { Sheet } from "./Sheet";
 
@@ -117,6 +118,8 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
           </div>
         </div>
 
+        <BackupSection />
+
         <CaseLoader
           currentCaseId={settings.loadedCaseId}
           onLoad={(c) => {
@@ -155,7 +158,8 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
           </div>
           <p className="mt-2 text-[12px] leading-snug text-ink-3">
             Restoring the sample ledger reloads case PUB-01 exactly as it opens on a fresh
-            visit. Nothing is stored anywhere but this browser, so clearing is final.
+            visit. Clearing wipes this browser&apos;s copy; a backup, if you made one, stays
+            under its key.
           </p>
         </div>
 

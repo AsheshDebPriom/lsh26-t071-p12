@@ -9,7 +9,7 @@ These ship in the deployed application.
 
 | Package | Version | Licence | Used for |
 |---|---|---|---|
-| [next](https://nextjs.org) | 16.3.3 | MIT | App Router framework, the two API routes, the build |
+| [next](https://nextjs.org) | 16.3.3 | MIT | App Router framework, the three API routes, the build |
 | [react](https://react.dev) | 19.2.8 | MIT | UI runtime |
 | [react-dom](https://react.dev) | 19.2.8 | MIT | DOM renderer |
 | [zustand](https://github.com/pmndrs/zustand) | 5.0.15 | MIT | State store and its `persist` middleware (localStorage) |
@@ -43,6 +43,7 @@ Used to build, check and type the project. None of these reach the browser.
 | Service | Terms | Used for |
 |---|---|---|
 | [Google Gemini API](https://ai.google.dev/gemini-api/terms) | Google APIs Terms of Service | Reading the amount, date and shop from a photographed receipt (`POST /api/receipt`), and the in-app assistant (`POST /api/chat`). Both are called server-side only; the key is never sent to the browser. |
+| [Supabase](https://supabase.com/terms) | Supabase Terms of Service | Optional Postgres backup of a ledger, via `POST/GET /api/ledger`. Reached over PostgREST with the service role from the server only; no Supabase client library is bundled. |
 | [Vercel](https://vercel.com/legal/terms) | Vercel Terms of Service | Hosting the deployed application |
 
 ## Starters, templates and UI kits

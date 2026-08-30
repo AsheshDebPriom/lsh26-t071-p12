@@ -23,6 +23,7 @@ import { useLedger } from "@/store/useLedger";
 
 import { AddExpenseSheet } from "./AddExpenseSheet";
 import { AssistantPanel } from "./AssistantPanel";
+import { BackupStatus, useAutoBackup } from "./Backup";
 import { DashboardTab } from "./DashboardTab";
 import { ForecastTab } from "./ForecastTab";
 import { LogTab } from "./LogTab";
@@ -69,6 +70,9 @@ export function AppShell() {
   const [tab, setTab] = useState<TabId>("month");
   const [adding, setAdding] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Pushes changes once the user has turned backup on. No-op until then.
+  useAutoBackup();
 
   if (!hydrated) return <BootSkeleton />;
 
@@ -172,8 +176,9 @@ export function AppShell() {
           <Button variant="secondary" className="w-full" onClick={() => setSettingsOpen(true)}>
             Setup &amp; sample cases
           </Button>
-          <p className="pt-1 text-[10.5px] leading-relaxed text-ink-3">
-            Kept in this browser only — no account, no server copy.
+          <BackupStatus className="pt-1" />
+          <p className="pt-0.5 text-[10.5px] leading-relaxed text-ink-3">
+            Kept in this browser. Back it up from Setup to keep a copy off this device.
           </p>
         </div>
       </aside>
