@@ -16,14 +16,26 @@
   --rule: #e4e1dc;
   --rule-strong: #cfcac3;
 
-  --out: #a8342c;
-  --out-soft: #fbeceb;
-  --in: #0e6b62;
-  --in-soft: #e6f2f0;
+  /* Money out and money in. Checked with the palette validator: 11.4 dE
+     apart under protanopia, 23.4 under normal vision, both over 3:1 against
+     the surface. Deltas still always carry a sign or an arrow, so identity is
+     never colour alone. */
+  --out: #a02040;
+  --out-soft: #fbeaee;
+  --in: #15607a;
+  --in-soft: #e8f1f5;
 
-  --uncertain: #a8620a;
-  --uncertain-soft: #fdf3e3;
-  --uncertain-rule: #e0ae62;
+  /* Reserved. This amber means one thing only: a receipt field the model could
+     not read confidently. It appears nowhere else in the app. 20.3 dE from
+     --out under normal vision so the two can never be confused. */
+  --uncertain: #b5730a;
+  --uncertain-soft: #fdf4e5;
+  --uncertain-rule: #e2ab5c;
+
+  /* Chart marks. One hue: identity comes from the row label, not from colour,
+     so no categorical palette is needed and none is cycled. */
+  --bar: #57504a;
+  --bar-projected: #a79f97;
 
   --focus: #1a1817;
 }
@@ -44,11 +56,16 @@
   --color-uncertain: var(--uncertain);
   --color-uncertain-soft: var(--uncertain-soft);
   --color-uncertain-rule: var(--uncertain-rule);
+  --color-bar: var(--bar);
+  --color-bar-projected: var(--bar-projected);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 html {
+  /* Light only, deliberately. A ledger reads as paper; an automatic dark
+     inversion would break the money-in / money-out contrast checks. */
+  color-scheme: light;
   background: var(--ground);
   -webkit-text-size-adjust: 100%;
 }
@@ -132,6 +149,16 @@ input[type="range"]::-moz-range-thumb {
 }
 input[type="range"]:active::-webkit-slider-thumb {
   cursor: grabbing;
+}
+
+/* The forecast half of any bar is hatched as well as lighter: its fill sits
+   below 3:1 on purpose, so texture and a direct label carry the meaning. */
+.hatch {
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--bar-projected) 0 3px,
+    color-mix(in srgb, var(--bar-projected) 55%, white) 3px 6px
+  );
 }
 
 @media (prefers-reduced-motion: reduce) {
