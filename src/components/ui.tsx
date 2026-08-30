@@ -50,11 +50,12 @@ export function Taka({ value, decimals = 0, signed = false, className }: TakaPro
 export function AnimatedTaka({ value, decimals = 0, signed = false, className }: TakaProps) {
   const reduced = useReducedMotion();
   const spring = useSpring(value, { stiffness: 220, damping: 30, mass: 0.6 });
-  const text = useTransform(spring, (v) => {
-    const rounded = Math.round(v);
-    const sign = rounded < 0 ? "−" : signed ? "+" : "";
-    return `${sign}${formatAmount(rounded, decimals)}`;
-  });
+  // The sign has to sit outside the currency mark, so a positive surplus reads
+  // "+৳0" and not "৳+0".
+  const sign = useTransform(spring, (v): string =>
+    Math.round(v) < 0 ? "−" : signed ? "+" : "",
+  );
+  const digits = useTransform(spring, (v) => formatAmount(Math.round(v), decimals));
 
   useEffect(() => {
     if (reduced) spring.jump(value);
@@ -63,8 +64,9 @@ export function AnimatedTaka({ value, decimals = 0, signed = false, className }:
 
   return (
     <span className={cn("tnum whitespace-nowrap", className)}>
+      <motion.span>{sign}</motion.span>
       <span className="taka">৳</span>
-      <motion.span>{text}</motion.span>
+      <motion.span>{digits}</motion.span>
     </span>
   );
 }
