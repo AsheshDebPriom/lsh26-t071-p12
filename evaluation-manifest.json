@@ -114,5 +114,8 @@
     }
   ],
   "licenses_file": "LICENSES.md",
-  "declaration": "The information above is complete and truthful to the best of the team's knowledge."
+  "declaration": "The information above is complete and truthful to the best of the team's knowledge.",
+  "additional_features_beyond_the_brief": {
+    "assistant": "An in-app assistant on every screen (src/components/AssistantPanel.tsx, src/app/api/chat/route.ts, src/lib/assistant.ts). It answers questions about the user's own month and can record an expense, create a pocket, change a contribution, run a what-if, load a published case or open a screen. Not one of the three published bonus features — built in addition to them. Two properties keep it honest, and both mirror the receipt reader's discipline: every figure it can quote is supplied in a digest computed by the same forecast and pocket simulation that draw the screens, so it never estimates a number and says plainly when a fact is outside that digest; and it cannot write to the ledger — it returns a typed tool call which is validated and rendered as an Apply/Discard card, with the store only ever written by the browser after the user agrees. The requirement-3 insight engine is untouched: those sentences remain templates over computed values with no model text on that path."
+  }
 }

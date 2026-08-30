@@ -22,6 +22,10 @@ Four screens:
 | **Pockets** | When do I get the laptop, and what would a DPS have done with the same money? |
 | **Log** | Everything I have recorded. Tap any row to fix it. |
 
+There is also an **assistant** on every screen. It answers questions about your
+own month and it can do things for you — record an expense, create a pocket,
+change a contribution, run a what-if, load a sample case, open a screen.
+
 Add an expense by photographing the receipt, or by typing four fields.
 
 ---
@@ -268,6 +272,40 @@ All four required items work, so all three bonuses were built:
 
 ---
 
+## The assistant
+
+Ask it anything about your money, or just tell it what you spent.
+
+> **"I spent 420 taka on a CNG today"** → *Wants to: record ৳420 at CNG (Transport) on 17 April 2026.* → Apply
+> **"Where is my money going?"** → *"So far this month you have spent ৳27,083, with another ৳12,971 expected over the remaining 13 days. Your three largest expenses — Landlord ৳16,000, DESCO ৳2,600, Star Cineplex ৳1,326 — account for 74% of what you have spent."*
+
+Two properties make it safe to put beside someone's money, and both are the same
+discipline as the receipt reader:
+
+**It never computes a figure.** Every request carries a *digest* built by the
+same `forecast()` and `simulatePockets()` that draw the screens — the month, the
+categories, the monthly charges, the pockets with their simulated dates and DPS
+figures, the written insights. The model quotes from that and is told it may not
+estimate. Asked for something outside it, it says so:
+
+> **"How much did I spend on Groceries in January 2025?"** → *"I do not have your spending figures for January 2025. I can tell you that for Groceries this month you have spent ৳547, and the projected month total is ৳2,688."*
+
+**It cannot write to your ledger.** It returns a *typed tool call*, which is
+validated (`parseAction` in `src/lib/assistant.ts` — an amount must be a
+positive finite number, a date must be ISO, a case id must match `PUB-nn`) and
+then rendered as a card with **Apply** and **Discard**. The store is only ever
+written by the browser, after you agree. Opening a screen is the one exception,
+because it changes nothing.
+
+It asks rather than guesses, exactly as the receipt reader does:
+
+> **"I bought something at Agora"** → *"How much was the Agora purchase, and what category was it (for example, Groceries)?"*
+
+**The insight engine is untouched by any of this.** Requirement 3's sentences are
+still templates over computed values, with no model text anywhere on that path.
+The assistant is an extra way in, not a replacement for it — and the whole app
+works without it if `GEMINI_API_KEY` is unset.
+
 ## Major decisions
 
 **Integer paisa for all money.** The published DPS rule rounds half up to the paisa
@@ -337,7 +375,8 @@ with the arrows.
 - The recurring test is exact-shop-name. "GP recharge" and "Grameenphone" would not be matched as the same biller.
 - Pocket completion dates land on a month end, because contributions are monthly. A within-month date would be false precision.
 - No authentication, no multi-currency, no bank or mobile-money integration, no export. All out of scope by design.
-- The receipt reader depends on an external API. Its rate limits are modest, and it can be slow on a poor connection; the manual path is always available and is never hidden behind a failure.
+- The receipt reader and the assistant depend on an external API. Its rate limits are modest, and it can be slow on a poor connection; the typed path is always available and is never hidden behind a failure.
+- The assistant answers only from the digest it is handed, so it cannot reach beyond the current and previous month — the same horizon the forecast has. It holds no memory between sessions.
 - Light theme only. A ledger reads as paper, and an automatic dark inversion would break the contrast checks the palette was chosen against.
 
 ## What would come next
@@ -363,8 +402,10 @@ src/lib/          the engine, all pure, no React
   types.ts
 src/store/        zustand + persist
 src/components/   the four tabs, the receipt flow, the sheets, the primitives
+src/lib/assistant.ts  the digest the assistant may quote, and the typed action parser
 src/app/
-  api/receipt/    the only server route; holds the key
+  api/receipt/    reads a photographed receipt
+  api/chat/       the assistant; both routes hold the key, nothing else is server-side
 scripts/check.ts  the 25-case harness and the constraint tests
 ```
 

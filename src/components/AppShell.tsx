@@ -22,6 +22,7 @@ import { simulatePockets } from "@/lib/pockets";
 import { useLedger } from "@/store/useLedger";
 
 import { AddExpenseSheet } from "./AddExpenseSheet";
+import { AssistantPanel } from "./AssistantPanel";
 import { DashboardTab } from "./DashboardTab";
 import { ForecastTab } from "./ForecastTab";
 import { LogTab } from "./LogTab";
@@ -268,6 +269,14 @@ export function AppShell() {
           ))}
         </ul>
       </nav>
+
+      <AssistantPanel
+        fc={fc}
+        sim={sim}
+        pockets={pockets}
+        expenses={expenses}
+        onNavigate={setTab}
+      />
 
       <AddExpenseSheet open={adding} onClose={() => setAdding(false)} />
       <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
