@@ -282,6 +282,20 @@ is a ranked horizontal bar, and a ranked bar is a `div` with a width — a chart
 library would have added weight and a hydration surface for no gain. Recharts was
 installed, went unused, and was removed rather than shipped as a dead dependency.
 
+**Two layouts, one component tree.** On a phone this is a header, a scrolling
+page and a thumb-reachable bottom bar. From `lg` up it becomes a fixed sidebar
+beside a 1180px content column — a KPI row across the top, then a two-column
+grid — because a judge opens the live URL on a laptop, and a phone column
+stretched across a desktop is not a responsive design, it is an unfinished one.
+Category bars sit in a fixed-width track beside their labels rather than
+spanning the card, so a 3% category is a short bar in a short track instead of a
+sliver stranded at the end of a 700px rule.
+
+**Comparisons are like-for-like.** A category's delta compares this month so far
+against *the same days* of last month, not against last month's finished total —
+otherwise every category simply not yet touched would show as a saving it has
+not made.
+
 **One hue for every bar.** Identity comes from the row label beside each bar, so no
 categorical palette is cycled and nothing rests on telling ten hues apart. Colour is
 left to do one job: money out in crimson, money in in steel blue, and a reserved

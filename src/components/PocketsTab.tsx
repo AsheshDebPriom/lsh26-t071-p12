@@ -5,11 +5,11 @@
  *
  * Each pocket carries a name, a target, the item it is for and a monthly
  * contribution. Its completion date comes from the forward simulation in
- * lib/pockets, never from target divided by contribution — and each card shows
- * both numbers side by side so the difference is visible rather than claimed.
+ * lib/pockets, never from target divided by contribution — and each card puts
+ * the two figures side by side so the difference is visible rather than claimed.
  *
- * Beside it sits what the same deposits would have done in a DPS, with the
- * rate and the compounding basis printed next to the figure.
+ * Beside it sits what the same deposits would have done in a DPS, with the rate
+ * and the compounding basis printed next to the figure.
  */
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -54,10 +54,10 @@ export function PocketsTab({
   const ordered = [...pockets].sort((a, b) => a.priority - b.priority);
 
   return (
-    <>
-      <SurplusCard fc={fc} sim={sim} count={pockets.length} />
+    <div className="space-y-4">
+      <SurplusRow fc={fc} sim={sim} count={pockets.length} />
 
-      {pockets.length > 0 ? (
+      {ordered.length > 0 ? (
         <WhatIfControl fc={fc} sim={sim} pockets={pockets} baseline={baseline} />
       ) : null}
 
@@ -74,18 +74,20 @@ export function PocketsTab({
           />
         </Card>
       ) : (
-        ordered.map((p, i) => (
-          <PocketCard
-            key={p.id}
-            pocket={p}
-            index={i}
-            total={ordered.length}
-            projection={sim.projections.get(p.id)!}
-            sim={sim}
-            fc={fc}
-            onEdit={() => setEditing(p)}
-          />
-        ))
+        <div className="grid gap-4 xl:grid-cols-2">
+          {ordered.map((p, i) => (
+            <PocketCard
+              key={p.id}
+              pocket={p}
+              index={i}
+              total={ordered.length}
+              projection={sim.projections.get(p.id)!}
+              sim={sim}
+              fc={fc}
+              onEdit={() => setEditing(p)}
+            />
+          ))}
+        </div>
       )}
 
       {ordered.length > 0 ? (
@@ -94,24 +96,20 @@ export function PocketsTab({
         </Button>
       ) : null}
 
-      <PocketSheet
-        open={creating}
-        onClose={() => setCreating(false)}
-        title="New pocket"
-      />
+      <PocketSheet open={creating} onClose={() => setCreating(false)} title="New pocket" />
       <PocketSheet
         open={editing !== null}
         onClose={() => setEditing(null)}
         title="Edit pocket"
         pocket={editing ?? undefined}
       />
-    </>
+    </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
 
-function SurplusCard({
+function SurplusRow({
   fc,
   sim,
   count,
@@ -121,47 +119,38 @@ function SurplusCard({
   count: number;
 }) {
   const covered = sim.steadyMonthSurplus >= sim.totalRequested;
+  const gap = sim.totalRequested - Math.max(0, sim.steadyMonthSurplus);
+
   return (
     <Card>
       <CardHead
         title="What there is to save with"
-        hint="Every date below is built from this, month by month."
+        hint="Every date below is built from this figure, month by month."
       />
-      <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-rule px-4 py-3 sm:grid-cols-3">
-        <div>
-          <p className="text-[11px] leading-tight text-ink-3">
-            Left in {monthLabel(fc.monthKey, "short")}
-          </p>
-          <p
-            className={cn(
-              "mt-0.5 text-[17px] font-semibold tracking-tight",
-              sim.currentMonthSurplus < 0 ? "text-out" : "text-in",
-            )}
-          >
-            <AnimatedTaka value={sim.currentMonthSurplus} signed />
-          </p>
-        </div>
-        <div>
-          <p className="text-[11px] leading-tight text-ink-3">A typical month after</p>
-          <p
-            className={cn(
-              "mt-0.5 text-[17px] font-semibold tracking-tight",
-              sim.steadyMonthSurplus < 0 ? "text-out" : "text-in",
-            )}
-          >
-            <AnimatedTaka value={sim.steadyMonthSurplus} signed />
-          </p>
-        </div>
-        <div>
-          <p className="text-[11px] leading-tight text-ink-3">
-            {count} pocket{count === 1 ? "" : "s"} ask for
-          </p>
-          <p className="mt-0.5 text-[17px] font-semibold tracking-tight text-ink">
-            <Taka value={sim.totalRequested} />
-          </p>
-        </div>
+      <div className="grid grid-cols-2 gap-x-6 gap-y-4 border-t border-rule px-5 py-4 lg:grid-cols-4">
+        <Figure
+          label={`Left in ${monthLabel(fc.monthKey, "short")}`}
+          value={sim.currentMonthSurplus}
+          tone={sim.currentMonthSurplus < 0 ? "out" : "in"}
+          signed
+        />
+        <Figure
+          label="A typical month after"
+          value={sim.steadyMonthSurplus}
+          tone={sim.steadyMonthSurplus < 0 ? "out" : "in"}
+          signed
+        />
+        <Figure
+          label={`${count} pocket${count === 1 ? "" : "s"} ask for`}
+          value={sim.totalRequested}
+        />
+        <Figure
+          label={covered ? "Spare each month" : "Unfunded each month"}
+          value={covered ? sim.steadyMonthSurplus - sim.totalRequested : gap}
+          tone={covered ? "in" : "out"}
+        />
       </div>
-      <p className="border-t border-rule px-4 py-2.5 text-[12px] leading-relaxed text-ink-2">
+      <p className="border-t border-rule px-5 py-3 text-[12.5px] leading-relaxed text-ink-2">
         {count === 0
           ? "Create a pocket and its date will be simulated against this surplus."
           : covered
@@ -169,6 +158,32 @@ function SurplusCard({
             : "The forecast does not cover every contribution, so each month the pockets are funded in order and the ones lower down are capped at what is left. That is why their dates sit further out than the contribution alone would suggest."}
       </p>
     </Card>
+  );
+}
+
+function Figure({
+  label,
+  value,
+  tone,
+  signed,
+}: {
+  label: string;
+  value: number;
+  tone?: "in" | "out";
+  signed?: boolean;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="eyebrow">{label}</p>
+      <p
+        className={cn(
+          "figure mt-2 text-[23px] leading-none",
+          tone === "out" ? "text-out" : tone === "in" ? "text-in" : "text-ink",
+        )}
+      >
+        <AnimatedTaka value={value} signed={signed} />
+      </p>
+    </div>
   );
 }
 
@@ -198,85 +213,97 @@ function PocketCard({
   // Shown only as the contrast to the simulated date. Never used as the answer.
   const naiveMonths = Math.ceil(pocket.target / pocket.monthlyContribution);
   const shortfall = projection.requestedThisMonth - projection.fundedThisMonth;
+  const slip = projection.reachable ? projection.monthsToComplete! - naiveMonths : null;
 
   return (
-    <Card>
-      <CardHead
-        title={pocket.name}
-        hint={pocket.item}
-        right={
-          <div className="flex items-center gap-1">
-            <Pill>#{index + 1} funded</Pill>
-            <button
-              aria-label={`Move ${pocket.name} up the funding order`}
-              disabled={index === 0}
-              onClick={() => movePocket(pocket.id, -1)}
-              className="h-6 w-6 rounded border border-rule text-[11px] text-ink-2 disabled:opacity-30 hover:bg-sunk"
-            >
-              ↑
-            </button>
-            <button
-              aria-label={`Move ${pocket.name} down the funding order`}
-              disabled={index === total - 1}
-              onClick={() => movePocket(pocket.id, 1)}
-              className="h-6 w-6 rounded border border-rule text-[11px] text-ink-2 disabled:opacity-30 hover:bg-sunk"
-            >
-              ↓
-            </button>
-          </div>
-        }
-      />
+    <Card className="flex flex-col overflow-hidden">
+      <div className="flex items-start justify-between gap-3 px-5 pb-3 pt-4">
+        <div className="min-w-0">
+          <h2 className="truncate text-[16px] font-semibold tracking-tight text-ink">
+            {pocket.name}
+          </h2>
+          <p className="mt-1 truncate text-[12.5px] text-ink-3">{pocket.item}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <Pill>#{index + 1} funded</Pill>
+          <button
+            aria-label={`Move ${pocket.name} up the funding order`}
+            disabled={index === 0}
+            onClick={() => movePocket(pocket.id, -1)}
+            className="h-6 w-6 rounded border border-rule text-[11px] text-ink-2 hover:bg-sunk disabled:opacity-30"
+          >
+            ↑
+          </button>
+          <button
+            aria-label={`Move ${pocket.name} down the funding order`}
+            disabled={index === total - 1}
+            onClick={() => movePocket(pocket.id, 1)}
+            className="h-6 w-6 rounded border border-rule text-[11px] text-ink-2 hover:bg-sunk disabled:opacity-30"
+          >
+            ↓
+          </button>
+        </div>
+      </div>
 
       {/* The headline: the date, or the honest absence of one. */}
-      <div className="border-t border-rule px-4 py-3">
+      <div className="border-t border-rule bg-sunk/60 px-5 py-4">
+        <p className="eyebrow">Expected completion</p>
         {projection.reachable ? (
           <>
-            <p className="text-[11px] leading-tight text-ink-3">Expected completion</p>
-            <p className="mt-0.5 text-[26px] font-semibold leading-tight tracking-tight text-ink">
+            <p className="figure mt-2 text-[28px] leading-none text-ink lg:text-[31px]">
               <MovingDate iso={projection.completionDate!} />
             </p>
-            <p className="mt-1 text-[12.5px] text-ink-2">
-              <span className="tnum font-medium text-ink">{projection.monthsToComplete}</span>{" "}
-              months of simulated saving ·{" "}
-              <span className="tnum">
-                target ÷ contribution would say {naiveMonths}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="rounded-md bg-surface px-2 py-1 text-[11.5px] text-ink-2 shadow-lift-1">
+                <span className="tnum font-semibold text-ink">
+                  {projection.monthsToComplete}
+                </span>{" "}
+                months simulated
               </span>
-              {projection.monthsToComplete! > naiveMonths ? (
-                <span className="text-out"> — {projection.monthsToComplete! - naiveMonths} months later</span>
+              <span className="rounded-md bg-surface px-2 py-1 text-[11.5px] text-ink-3 shadow-lift-1">
+                target ÷ contribution says{" "}
+                <span className="tnum font-semibold">{naiveMonths}</span>
+              </span>
+              {slip && slip > 0 ? (
+                <span className="rounded-md border border-out/25 bg-out-soft px-2 py-1 text-[11.5px] font-medium text-out">
+                  <span className="tnum">{slip}</span> months later
+                </span>
               ) : null}
-            </p>
+            </div>
           </>
         ) : (
           <>
-            <p className="text-[11px] leading-tight text-ink-3">Expected completion</p>
-            <p className="mt-0.5 text-[20px] font-semibold leading-tight tracking-tight text-out">
+            <p className="mt-2 text-[19px] font-semibold leading-tight tracking-tight text-out">
               Not reachable at current spending
             </p>
-            <p className="mt-1 text-[12.5px] leading-snug text-ink-2">
+            <p className="mt-2 text-[12.5px] leading-snug text-ink-2">
               A typical month leaves{" "}
               <Taka value={sim.steadyMonthSurplus} signed className="font-medium" />, so this
-              pocket never reaches <Taka value={pocket.target} />. Cutting a category or
-              lowering a contribution above it in the order will give it a date.
+              pocket never reaches <Taka value={pocket.target} />. Cut a category above, or
+              lower a contribution ahead of it in the order.
             </p>
           </>
         )}
       </div>
 
-      {/* Progress toward the target this month. */}
-      <div className="border-t border-rule px-4 py-3">
+      {/* Target, contribution and what actually landed this month. */}
+      <div className="space-y-3 border-t border-rule px-5 py-4">
         <div className="flex items-baseline justify-between gap-3">
-          <span className="text-[12px] text-ink-3">Target</span>
-          <Taka value={pocket.target} className="text-[14px] font-semibold text-ink" />
+          <span className="text-[12.5px] text-ink-3">Target</span>
+          <span className="tnum text-[15px] font-semibold text-ink">
+            <Taka value={pocket.target} />
+          </span>
         </div>
+
         {/* Dragging this re-runs the whole simulation on every change event, so
             the date above moves as the thumb moves. */}
-        <div className="mt-2">
+        <div>
           <div className="flex items-baseline justify-between gap-3">
-            <label htmlFor={`contrib-${pocket.id}`} className="text-[12px] text-ink-3">
+            <label htmlFor={`contrib-${pocket.id}`} className="text-[12.5px] text-ink-3">
               Set aside each month
             </label>
-            <span className="text-[13px] text-ink">
-              <AnimatedTaka value={pocket.monthlyContribution} className="font-medium" />
+            <span className="tnum text-[15px] font-semibold text-ink">
+              <AnimatedTaka value={pocket.monthlyContribution} />
             </span>
           </div>
           <input
@@ -293,14 +320,15 @@ function PocketCard({
             }
           />
         </div>
-        <div className="mt-2 flex items-baseline justify-between gap-3">
-          <span className="text-[12px] text-ink-3">
+
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-[12.5px] text-ink-3">
             Funded in {monthLabel(fc.monthKey, "short")}
           </span>
-          <span className="text-[13px]">
+          <span className="tnum text-[14px]">
             <AnimatedTaka
               value={projection.fundedThisMonth}
-              className={cn("font-medium", shortfall > 0 ? "text-out" : "text-in")}
+              className={cn("font-semibold", shortfall > 0 ? "text-out" : "text-in")}
             />
             {shortfall > 0 ? (
               <span className="text-[12px] text-ink-3">
@@ -311,14 +339,14 @@ function PocketCard({
           </span>
         </div>
 
-        <p className="mt-2.5 rounded-lg bg-sunk px-3 py-2 text-[12px] leading-relaxed text-ink-2">
+        <p className="rounded-lg bg-sunk px-3 py-2.5 text-[12px] leading-relaxed text-ink-2">
           {pocketSentence(pocket, sim, fc.monthKey)}
         </p>
       </div>
 
       <DpsPanel projection={projection} pocket={pocket} />
 
-      <div className="flex items-center gap-2 border-t border-rule px-4 py-2.5">
+      <div className="mt-auto flex items-center gap-2 border-t border-rule px-5 py-3">
         <Button size="sm" variant="secondary" onClick={onEdit}>
           Edit
         </Button>
@@ -340,15 +368,25 @@ function PocketCard({
 }
 
 /**
- * The date travels rather than snapping, so that when the what-if slider moves
- * it the causality is felt rather than inferred. A later date rises from below,
- * an earlier one drops from above, so the direction of the change is legible
- * before the text has even been read.
+ * Twice the current contribution gives the thumb somewhere useful to travel in
+ * both directions, without a range so wide that a small drag does nothing.
+ */
+function contributionSliderMax(pocket: Pocket) {
+  const contributionTaka = Math.round(pocket.monthlyContribution / 100);
+  const targetTaka = Math.round(pocket.target / 100);
+  return Math.max(2000, Math.min(targetTaka, Math.max(contributionTaka * 2, 5000)));
+}
+
+/**
+ * The date travels rather than snapping, so that when a slider moves it the
+ * causality is felt rather than inferred. A later date rises from below, an
+ * earlier one drops from above, so the direction is legible before the text has
+ * even been read.
  */
 function MovingDate({ iso }: { iso: string }) {
   const reduced = useReducedMotion();
-  // Adjust state during render — the documented way to react to a changed
-  // prop without an effect and without reading a ref mid-render.
+  // Adjust state during render — the documented way to react to a changed prop
+  // without an effect and without reading a ref mid-render.
   const [seen, setSeen] = useState(iso);
   const [later, setLater] = useState(true);
   if (seen !== iso) {
@@ -364,7 +402,11 @@ function MovingDate({ iso }: { iso: string }) {
           className="tnum inline-block"
           initial={reduced ? { opacity: 0 } : { y: later ? "0.7em" : "-0.7em", opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={reduced ? { opacity: 0 } : { y: later ? "-0.7em" : "0.7em", opacity: 0, position: "absolute" }}
+          exit={
+            reduced
+              ? { opacity: 0 }
+              : { y: later ? "-0.7em" : "0.7em", opacity: 0, position: "absolute" }
+          }
           transition={{ duration: reduced ? 0 : 0.28, ease: [0.22, 0.9, 0.3, 1] }}
         >
           {formatDate(iso, "long")}
@@ -386,7 +428,7 @@ function DpsPanel({
   const dps = projection.dps;
   if (!dps) {
     return (
-      <div className="border-t border-rule px-4 py-3">
+      <div className="border-t border-rule px-5 py-4">
         <p className="text-[12px] leading-relaxed text-ink-3">
           No money reaches this pocket in the simulation, so there is nothing to compare a
           DPS against.
@@ -396,54 +438,52 @@ function DpsPanel({
   }
 
   return (
-    <div className="border-t border-rule bg-in-soft/40 px-4 py-3">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.09em] text-ink-3">
-            The same deposits in a DPS
-          </p>
-          <p className="mt-0.5 text-[12px] leading-snug text-ink-2">
-            {dps.annualRatePercent.toFixed(2)}% a year, compounded monthly. The deposit goes
-            in first, then interest of balance × {dps.annualRatePercent.toFixed(2)} ÷ 12 ÷ 100
-            is rounded half up to the paisa and added, so later months earn on it too.
-          </p>
-        </div>
+    <div className="border-t border-rule bg-in-soft/45 px-5 py-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <p className="eyebrow">The same deposits in a DPS</p>
+        <p className="tnum text-[11.5px] font-semibold text-in">
+          {dps.annualRatePercent.toFixed(2)}% a year, compounded monthly
+        </p>
       </div>
+      <p className="mt-1.5 text-[11.5px] leading-snug text-ink-2">
+        The deposit goes in first, then interest of balance × {dps.annualRatePercent.toFixed(2)}{" "}
+        ÷ 12 ÷ 100 is rounded half up to the paisa and added — so later months earn on it too.
+      </p>
 
-      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2.5">
+      <div className="mt-3 grid grid-cols-2 gap-4">
         <div>
           <p className="text-[11px] leading-tight text-ink-3">
             {projection.reachable ? "Balance by the pocket's date" : "Balance after 50 years"}
           </p>
-          <p className="mt-0.5 text-[15px] font-semibold tracking-tight text-in">
+          <p className="figure mt-1.5 text-[19px] leading-none text-in">
             <AnimatedTaka value={dps.balanceAtPocketCompletion} decimals={2} />
           </p>
         </div>
         <div>
           <p className="text-[11px] leading-tight text-ink-3">Of which interest</p>
-          <p className="mt-0.5 text-[15px] font-semibold tracking-tight text-in">
+          <p className="figure mt-1.5 text-[19px] leading-none text-in">
             <AnimatedTaka value={dps.interestAtPocketCompletion} decimals={2} />
           </p>
         </div>
       </div>
 
-      <p className="mt-2.5 text-[12px] leading-relaxed text-ink-2">
+      <p className="mt-3 text-[12px] leading-relaxed text-ink-2">
         {dps.targetReachedMonth ? (
           <>
             With interest, the same money reaches <Taka value={pocket.target} /> by{" "}
-            <span className="font-medium text-ink">
+            <span className="font-semibold text-ink">
               {formatDate(dps.targetReachedDate!, "long")}
             </span>
             {dps.monthsEarlier !== null && dps.monthsEarlier > 0 ? (
               <>
                 {" "}
-                — <span className="font-medium text-in">{dps.monthsEarlier} months earlier</span>{" "}
+                — <span className="font-semibold text-in">{dps.monthsEarlier} months earlier</span>{" "}
                 than saving it in a box.
               </>
             ) : (
               <>, the same month as saving it in a box.</>
-            )}
-            {" "}Deposits total <Taka value={projection.totalDeposited} />, so{" "}
+            )}{" "}
+            Deposits total <Taka value={projection.totalDeposited} />, so{" "}
             <Taka value={dps.interestAtPocketCompletion} decimals={2} /> of the balance is
             interest rather than your own money.
           </>
@@ -454,7 +494,7 @@ function DpsPanel({
           </>
         )}
       </p>
-      <p className="mt-1.5 text-[11px] leading-snug text-ink-3">
+      <p className="mt-2 text-[11px] leading-snug text-ink-3">
         Illustrative. A real DPS also has a fixed term, a penalty for a missed instalment and
         tax on the interest, none of which is modelled here.
       </p>
@@ -470,33 +510,39 @@ function Schedule({ projection }: { projection: PocketProjection }) {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[26rem] text-[12px]">
           <thead>
-            <tr className="border-b border-rule text-left text-ink-3">
-              <th className="px-4 py-2 font-medium">Month</th>
-              <th className="px-2 py-2 text-right font-medium">Month surplus</th>
-              <th className="px-2 py-2 text-right font-medium">Wanted</th>
-              <th className="px-2 py-2 text-right font-medium">Funded</th>
-              <th className="px-4 py-2 text-right font-medium">Balance</th>
+            <tr className="border-b border-rule text-left">
+              <th className="eyebrow px-5 py-2 font-semibold">Month</th>
+              <th className="eyebrow px-2 py-2 text-right font-semibold">Surplus</th>
+              <th className="eyebrow px-2 py-2 text-right font-semibold">Wanted</th>
+              <th className="eyebrow px-2 py-2 text-right font-semibold">Funded</th>
+              <th className="eyebrow px-5 py-2 text-right font-semibold">Balance</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-rule">
+          <tbody>
             {projection.schedule.map((m) => (
-              <tr key={m.monthKey} className={m.funded < m.requested ? "bg-out-soft/40" : ""}>
-                <td className="px-4 py-1.5 text-ink">{monthLabel(m.monthKey, "short")}</td>
-                <td className="px-2 py-1.5 text-right text-ink-2">
+              <tr
+                key={m.monthKey}
+                className={cn(
+                  "border-b border-rule last:border-0",
+                  m.funded < m.requested && "bg-out-soft/40",
+                )}
+              >
+                <td className="px-5 py-1.5 text-ink">{monthLabel(m.monthKey, "short")}</td>
+                <td className="tnum px-2 py-1.5 text-right text-ink-2">
                   <Taka value={m.monthSurplus} signed />
                 </td>
-                <td className="px-2 py-1.5 text-right text-ink-2">
+                <td className="tnum px-2 py-1.5 text-right text-ink-2">
                   <Taka value={m.requested} />
                 </td>
                 <td
                   className={cn(
-                    "px-2 py-1.5 text-right font-medium",
+                    "tnum px-2 py-1.5 text-right font-semibold",
                     m.funded < m.requested ? "text-out" : "text-ink",
                   )}
                 >
                   <Taka value={m.funded} />
                 </td>
-                <td className="px-4 py-1.5 text-right text-ink">
+                <td className="tnum px-5 py-1.5 text-right text-ink">
                   <Taka value={m.balanceAfter} />
                 </td>
               </tr>
@@ -504,7 +550,7 @@ function Schedule({ projection }: { projection: PocketProjection }) {
           </tbody>
         </table>
       </div>
-      <p className="px-4 py-2.5 text-[11.5px] leading-snug text-ink-3">
+      <p className="px-5 py-3 text-[11.5px] leading-snug text-ink-3">
         First {projection.schedule.length} months. Rows shaded in the money-out colour are
         months where the surplus could not cover the full contribution — each one pushes the
         completion date out.
@@ -530,12 +576,7 @@ function PocketSheet({
   const updatePocket = useLedger((s) => s.updatePocket);
   const removePocket = useLedger((s) => s.removePocket);
 
-  const [form, setForm] = useState({
-    name: "",
-    item: "",
-    target: "",
-    contribution: "",
-  });
+  const [form, setForm] = useState({ name: "", item: "", target: "", contribution: "" });
   const [touched, setTouched] = useState(false);
   const [seeded, setSeeded] = useState<string | null>(null);
 
@@ -556,7 +597,8 @@ function PocketSheet({
   if (!form.name.trim()) errors.name = "Give the pocket a name";
   if (!form.item.trim()) errors.item = "What exactly is it for?";
   if (!(Number(form.target) > 0)) errors.target = "Target must be more than zero";
-  if (!(Number(form.contribution) > 0)) errors.contribution = "Contribution must be more than zero";
+  if (!(Number(form.contribution) > 0))
+    errors.contribution = "Contribution must be more than zero";
   const valid = Object.keys(errors).length === 0;
 
   const close = () => {
@@ -648,16 +690,6 @@ function PocketSheet({
       </form>
     </Sheet>
   );
-}
-
-/**
- * Twice the current contribution gives the thumb somewhere useful to travel in
- * both directions, without a range so wide that a small drag does nothing.
- */
-function contributionSliderMax(pocket: Pocket) {
-  const contributionTaka = Math.round(pocket.monthlyContribution / 100);
-  const targetTaka = Math.round(pocket.target / 100);
-  return Math.max(2000, Math.min(targetTaka, Math.max(contributionTaka * 2, 5000)));
 }
 
 function Field({

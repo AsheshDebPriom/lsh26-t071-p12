@@ -37,6 +37,12 @@
   --bar: #57504a;
   --bar-projected: #a79f97;
 
+  /* Elevation. Three steps only — a ledger is flat paper, not a stack of cards. */
+  --lift-1: 0 1px 2px rgb(26 24 23 / 0.05), 0 0 0 1px rgb(26 24 23 / 0.045);
+  --lift-2: 0 2px 4px rgb(26 24 23 / 0.05), 0 8px 24px -12px rgb(26 24 23 / 0.16),
+    0 0 0 1px rgb(26 24 23 / 0.05);
+  --lift-3: 0 24px 60px -20px rgb(26 24 23 / 0.28), 0 0 0 1px rgb(26 24 23 / 0.07);
+
   --focus: #1a1817;
 }
 
@@ -58,6 +64,9 @@
   --color-uncertain-rule: var(--uncertain-rule);
   --color-bar: var(--bar);
   --color-bar-projected: var(--bar-projected);
+  --shadow-lift-1: var(--lift-1);
+  --shadow-lift-2: var(--lift-2);
+  --shadow-lift-3: var(--lift-3);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -149,6 +158,30 @@ input[type="range"]::-moz-range-thumb {
 }
 input[type="range"]:active::-webkit-slider-thumb {
   cursor: grabbing;
+}
+
+/* A figure that leads a card. Tightened tracking and optical alignment so a
+   large number reads as one shape rather than a row of glyphs. */
+.figure {
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.022em;
+  font-weight: 600;
+}
+
+/* Section rule with a label sitting on it. */
+.eyebrow {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.card-hover {
+  transition: box-shadow 160ms ease, transform 160ms ease;
+}
+.card-hover:hover {
+  box-shadow: var(--lift-2);
 }
 
 /* The forecast half of any bar is hatched as well as lighter: its fill sits

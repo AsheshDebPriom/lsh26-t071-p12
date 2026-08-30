@@ -71,6 +71,8 @@ export type CategoryProjection = {
   spentThisMonth: Paisa;
   /** Last month's full total. */
   prevMonthTotal: Paisa;
+  /** The same slice of last month, day 1..daysElapsed — the fair comparison. */
+  prevMonthToDate: Paisa;
   /** Blended day-to-day burn rate, paisa per day. */
   dailyRate: number;
   /** Monthly charges in this category still expected this month. */
@@ -322,6 +324,7 @@ export function forecast(
       category,
       spentThisMonth: a.spentThisMonth,
       prevMonthTotal: a.prevMonthTotal,
+      prevMonthToDate: a.prevToDate,
       dailyRate,
       fixedRemaining,
       variableRemaining,

@@ -86,10 +86,7 @@ export function Card({
 }) {
   return (
     <As
-      className={cn(
-        "rounded-xl border border-rule bg-surface shadow-[0_1px_2px_rgba(26,24,23,0.04)]",
-        className,
-      )}
+      className={cn("rounded-xl border border-rule bg-surface shadow-lift-1", className)}
     >
       {children}
     </As>
@@ -106,12 +103,14 @@ export function CardHead({
   right?: ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-3">
+    <div className="flex items-start justify-between gap-4 px-5 pb-3.5 pt-4">
       <div className="min-w-0">
-        <h2 className="text-[13px] font-semibold tracking-tight text-ink">{title}</h2>
-        {hint ? <p className="mt-0.5 text-[12px] leading-snug text-ink-3">{hint}</p> : null}
+        <h2 className="text-[14px] font-semibold tracking-tight text-ink">{title}</h2>
+        {hint ? (
+          <p className="mt-1 max-w-prose text-[12px] leading-snug text-ink-3">{hint}</p>
+        ) : null}
       </div>
-      {right ? <div className="shrink-0">{right}</div> : null}
+      {right ? <div className="shrink-0 pt-0.5">{right}</div> : null}
     </div>
   );
 }
@@ -272,9 +271,9 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center gap-2 px-6 py-10 text-center">
-      <p className="text-[14px] font-medium text-ink">{title}</p>
-      <p className="max-w-xs text-[13px] leading-relaxed text-ink-3">{body}</p>
+    <div className="flex flex-col items-center gap-2 px-6 py-12 text-center">
+      <p className="text-[15px] font-medium text-ink">{title}</p>
+      <p className="max-w-sm text-[13px] leading-relaxed text-ink-3">{body}</p>
       {action ? <div className="mt-2">{action}</div> : null}
     </div>
   );
